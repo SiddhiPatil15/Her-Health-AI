@@ -45,14 +45,14 @@ const Onboarding = () => {
 
   const handleComplete = async () => {
     if (!auth.currentUser) {
-      console.log("Onboarding: No current user");
+      toast.error("No user session found. Please sign in again.");
       return;
     }
     setLoading(true);
-    console.log("Onboarding: Starting profile save", formData);
 
-    try {
-      const userRef = doc(db, "users", auth.currentUser.uid);
+    // Race against a 10-second timeout so the button never hangs forever
+    const savePromise = async () => {
+      const userRef = doc(db, "users", auth.currentUser!.uid);
       await setDoc(userRef, {
         ...formData,
         age: Number(formData.age),
@@ -62,17 +62,24 @@ const Onboarding = () => {
         onboardingCompleted: true,
         updatedAt: new Date().toISOString(),
       }, { merge: true });
+    };
 
-      console.log("Onboarding: Profile saved successfully");
-      toast.success("Profile completed! Welcome to your dashboard.");
-      
-      // Delay slightly to ensure Firestore is updated before navigation
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 500);
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Request timed out after 10 seconds. Check your Firestore rules at console.firebase.google.com")), 10_000)
+    );
+
+    try {
+      await Promise.race([savePromise(), timeoutPromise]);
+      toast.success("Profile saved! Redirecting...");
+      setTimeout(() => navigate("/dashboard"), 500);
     } catch (error: any) {
-      console.error("Onboarding: Error saving profile", error);
-      toast.error(error.message || "Failed to save profile");
+      console.error("Onboarding save error:", error);
+      const msg = error?.code === "permission-denied"
+        ? "❌ Firestore permission denied. Go to Firebase Console → Firestore → Rules and allow writes for authenticated users."
+        : error?.code === "unavailable"
+        ? "❌ Firestore is unavailable. Check your internet connection and Firebase project settings."
+        : error?.message || "Failed to save profile.";
+      toast.error(msg, { duration: 8000 });
     } finally {
       setLoading(false);
     }
