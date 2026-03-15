@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { auth, db } from "../lib/firebase";
-import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Activity, 
   Heart, 
@@ -11,22 +11,19 @@ import {
   Scale, 
   LogOut, 
   Bell, 
-  User as UserIcon,
   Sparkles,
   TrendingUp,
   Brain,
   Search,
-  Plus,
   Home,
   BarChart2,
   Settings,
-  HelpCircle,
   MessageCircle,
-  Send,
   Droplets,
   Calendar,
   Clock,
-  ChevronRight
+  ChevronRight,
+  ChevronDown
 } from "lucide-react";
 import { 
   LineChart, 
@@ -448,40 +445,10 @@ const DashboardHome = ({ userData, firstName, setActiveTab, scores }: any) => (
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section className="bg-white p-8 rounded-[40px] border border-[#F3F4F6] shadow-sm hover:shadow-md transition-shadow">
-         <div className="flex justify-between items-center mb-6">
-            <h3 className="text-h3 font-bold">FAQ</h3>
-            <button className="text-primary text-[11px] font-bold uppercase tracking-wider hover:opacity-80">View All</button>
-         </div>
-          <div className="space-y-4">
-            <div className="p-4 rounded-3xl bg-[#F8F9FA] border border-[#F1F3F5] hover:bg-white transition-colors">
-              <div className="flex items-start gap-3">
-                <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
-                <div>
-                  <p className="text-[14px] font-bold text-[#1F2937] leading-snug">How does the app predict Diabetes and Obesity risk?</p>
-                  <p className="text-[11px] text-[#9CA3AF] mt-2 leading-relaxed">Our ML Backend continuously processes your vitals and history against 4,500+ records in the Gestational Diabetes, Obesity Prediction, and Diabetes Prediction datasets to compute accurate risk probability percentages in real-time!</p>
-                </div>
-              </div>
-            </div>
-            <div className="p-4 rounded-2xl border border-[#F1F3F5] flex items-center justify-between hover:bg-rose-50/30 transition-colors cursor-pointer group">
-               <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-blue-400"></div>
-                  <span className="text-[13px] font-bold group-hover:text-primary transition-colors">What are the dietary signs of Type-2 Diabetes?</span>
-               </div>
-               <ChevronRight className="w-4 h-4 text-[#CED4DA] group-hover:text-primary group-hover:translate-x-1 transition-all" />
-            </div>
-            <div className="p-4 rounded-2xl border border-[#F1F3F5] flex items-center justify-between hover:bg-rose-50/30 transition-colors cursor-pointer group">
-               <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-                  <span className="text-[13px] font-bold group-hover:text-primary transition-colors">What are common symptoms of Menopause?</span>
-               </div>
-               <ChevronRight className="w-4 h-4 text-[#CED4DA] group-hover:text-primary group-hover:translate-x-1 transition-all" />
-            </div>
-         </div>
-      </section>
+      {/* FAQ Section — fully expandable accordion */}
+      <FAQSection />
 
-      {/* AI Tip Box */}
+      {/* AI Tip Box — dynamic based on user stage */}
       <div className="p-8 rounded-[40px] bg-[#FFE4E8] relative overflow-hidden group cursor-default shadow-sm hover:shadow-md transition-all">
          <div className="relative z-10">
            <div className="flex items-center gap-2 mb-3">
@@ -489,7 +456,13 @@ const DashboardHome = ({ userData, firstName, setActiveTab, scores }: any) => (
              <span className="text-[12px] font-bold text-primary uppercase tracking-wider">AI Quick Tip</span>
            </div>
            <p className="text-[15px] font-bold text-[#1F2937] leading-relaxed">
-             20 minutes of walking daily can significantly reduce metabolic risk during menopause.
+             {userData?.broadHealthStage === "pregnancy"
+               ? "During pregnancy, 30 mins of light walking daily lowers gestational diabetes risk by up to 25%."
+               : userData?.broadHealthStage === "menopause"
+               ? "20 minutes of walking daily significantly reduces obesity and metabolic risk during menopause."
+               : userData?.diabetesHistory !== "no"
+               ? "With a family history of diabetes, reducing refined sugar intake by 50% can lower your Type-2 diabetes risk by 31%."
+               : "Consistent 8-hr sleep, 8+ glasses of water & 30 min activity daily are the top 3 factors that reduce obesity risk."}
            </p>
          </div>
          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-rose-200/50 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
@@ -590,29 +563,53 @@ const ViewHeader = ({ title, icon, setActiveTab }: any) => (
   </div>
 );
 
-const ActivityTrackerView = ({ setActiveTab }: any) => (
-  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-8 max-w-5xl mx-auto w-full space-y-6">
-    <ViewHeader title="Activity Tracking" icon={<Activity className="text-blue-500" />} setActiveTab={setActiveTab} />
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-       <div className="bg-white p-8 rounded-[32px] shadow-sm border border-[#F3F4F6]">
-         <h3 className="font-bold text-muted-foreground">Daily Steps</h3>
-         <p className="text-[48px] font-bold mt-2 text-[#1F2937]">8,432</p>
-         <p className="text-emerald-500 text-[14px] font-bold mt-1">+1,200 from yesterday 🏃‍♀️</p>
-         <div className="w-full bg-gray-100 h-3 rounded-full mt-6">
-           <div className="bg-blue-500 h-3 rounded-full" style={{ width: '84%' }}></div>
+const ActivityTrackerView = ({ setActiveTab }: any) => {
+  const [logs, setLogs] = useState<any[]>([]);
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
+    import("../lib/healthService").then(({ getHealthLogs }) => {
+      getHealthLogs(user.uid, 7).then(setLogs);
+    });
+  }, []);
+  const totalSteps = logs.reduce((s, l) => s + (l.steps ?? 0), 0);
+  const totalActivity = logs.reduce((s, l) => s + (l.activityMinutes ?? 0), 0);
+  const stepGoal = 70000; // monthly
+  const activityGoal = 210; // 30 min * 7 days
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-8 max-w-5xl mx-auto w-full space-y-6">
+      <ViewHeader title="Activity Tracking" icon={<Activity className="text-blue-500" />} setActiveTab={setActiveTab} />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+         <div className="bg-white p-8 rounded-[32px] shadow-sm border border-[#F3F4F6]">
+           <h3 className="font-bold text-muted-foreground">Steps This Week</h3>
+           <p className="text-[48px] font-bold mt-2 text-[#1F2937]">{totalSteps > 0 ? totalSteps.toLocaleString() : "—"}</p>
+           <p className="text-blue-600 text-[14px] font-bold mt-1">{totalSteps > 0 ? `${(totalSteps * 0.0008).toFixed(1)} km walked 🏃‍♀️` : "Log steps using the Health Tracker pedometer"}</p>
+           <div className="w-full bg-gray-100 h-3 rounded-full mt-6">
+             <div className="bg-blue-500 h-3 rounded-full transition-all" style={{ width: `${Math.min((totalSteps / stepGoal) * 100, 100)}%` }}></div>
+           </div>
+           <p className="text-[12px] text-gray-400 mt-2">Goal: {stepGoal.toLocaleString()} steps/month</p>
          </div>
-       </div>
-       <div className="bg-white p-8 rounded-[32px] shadow-sm border border-[#F3F4F6]">
-         <h3 className="font-bold text-muted-foreground">Active Minutes (Zone 2)</h3>
-         <p className="text-[48px] font-bold mt-2 text-[#1F2937]">45 min</p>
-         <p className="text-emerald-500 text-[14px] font-bold mt-1">Goal Reached! 🎯</p>
-         <div className="w-full bg-gray-100 h-3 rounded-full mt-6">
-           <div className="bg-green-500 h-3 rounded-full" style={{ width: '100%' }}></div>
+         <div className="bg-white p-8 rounded-[32px] shadow-sm border border-[#F3F4F6]">
+           <h3 className="font-bold text-muted-foreground">Active Minutes (Week)</h3>
+           <p className="text-[48px] font-bold mt-2 text-[#1F2937]">{totalActivity > 0 ? `${totalActivity} min` : "—"}</p>
+           <p className={`text-[14px] font-bold mt-1 ${totalActivity >= activityGoal ? "text-emerald-500" : "text-amber-500"}`}>
+             {totalActivity >= activityGoal ? "Goal Reached! 🎯" : totalActivity > 0 ? `${activityGoal - totalActivity} min to go` : "Log activities in Health Tracker"}
+           </p>
+           <div className="w-full bg-gray-100 h-3 rounded-full mt-6">
+             <div className={`h-3 rounded-full transition-all ${totalActivity >= activityGoal ? "bg-green-500" : "bg-amber-400"}`} style={{ width: `${Math.min((totalActivity / activityGoal) * 100, 100)}%` }}></div>
+           </div>
+           <p className="text-[12px] text-gray-400 mt-2">Goal: {activityGoal} min/week</p>
          </div>
-       </div>
-    </div>
-  </motion.div>
-);
+      </div>
+      {logs.length === 0 && (
+        <div className="text-center py-6 text-muted-foreground bg-white rounded-[32px] border border-[#F3F4F6]">
+          <p className="font-bold">No activity data logged yet.</p>
+          <p className="text-sm mt-1">Go to <strong>Health Tracker</strong> and use the Pedometer or Log Today to record your steps and activity.</p>
+        </div>
+      )}
+    </motion.div>
+  );
+};
 
 const HealthMetricsView = ({ setActiveTab }: any) => {
     const [bp, setBp] = useState("");
@@ -756,6 +753,78 @@ const ExpertConsultationsView = ({ setActiveTab }: any) => {
         </div>
       </div>
     </motion.div>
+  );
+};
+
+// ── FAQ Accordion Component ──────────────────────────────────────────────────
+const FAQ_ITEMS = [
+  {
+    q: "How does HerHealth predict Diabetes and Obesity risk?",
+    a: "Our ML backend processes your vitals and history through three trained models: Gestational Diabetes, Obesity Prediction, and Type-2 Diabetes — trained on 4,500+ synthetic health records. It computes a risk probability in real-time based on your BMI, age, activity, sleep, diet, and medical history.",
+    color: "bg-primary",
+  },
+  {
+    q: "What dietary choices reduce Type-2 Diabetes risk?",
+    a: "Reducing refined sugar and processed carbohydrates, increasing fiber intake (whole grains, legumes), choosing low-glycemic foods, and maintaining proper hydration can significantly reduce Type-2 diabetes risk. Our app tracks your diet preference to factor this into your risk score.",
+    color: "bg-blue-400",
+  },
+  {
+    q: "What are common symptoms of Menopause to watch for?",
+    a: "Common symptoms include hot flashes, night sweats, irregular periods, mood changes, sleep disruption, and weight gain (especially around the abdomen). HerHealth monitors metabolic metrics during menopause as hormonal changes increase obesity and diabetes risk.",
+    color: "bg-emerald-400",
+  },
+  {
+    q: "How does pregnancy affect diabetes & obesity risk?",
+    a: "Pregnancy can trigger gestational diabetes in women with risk factors like high BMI, family history of diabetes, or age >30. Our Gestational Diabetes model specifically analyzes these factors. Tracking weight, activity, and sleep during pregnancy is critical for early detection.",
+    color: "bg-purple-400",
+  },
+  {
+    q: "What is BMI and why does it matter for my risk score?",
+    a: "BMI (Body Mass Index) is weight (kg) ÷ height² (m²). A BMI >25 is considered overweight and >30 is obese — both significantly increase risk of Type-2 diabetes and metabolic disorders. Our obesity model heavily weights BMI in generating your risk score.",
+    color: "bg-amber-400",
+  },
+];
+
+const FAQSection = () => {
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
+  return (
+    <section className="bg-white p-8 rounded-[40px] border border-[#F3F4F6] shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-h3 font-bold">FAQ</h3>
+        <span className="text-primary text-[11px] font-bold uppercase tracking-wider">Tap to expand</span>
+      </div>
+      <div className="space-y-3">
+        {FAQ_ITEMS.map((item, i) => (
+          <div key={i} className="rounded-2xl border border-[#F1F3F5] overflow-hidden">
+            <button
+              onClick={() => setOpenIndex(openIndex === i ? null : i)}
+              className="w-full p-4 flex items-center justify-between text-left hover:bg-rose-50/30 transition-colors group"
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-2 h-2 rounded-full ${item.color} shrink-0`}></div>
+                <span className="text-[13px] font-bold text-[#1F2937] group-hover:text-primary transition-colors pr-2">{item.q}</span>
+              </div>
+              <ChevronDown
+                className={`w-4 h-4 text-[#CED4DA] shrink-0 transition-transform duration-200 ${openIndex === i ? "rotate-180 text-primary" : ""}`}
+              />
+            </button>
+            <AnimatePresence>
+              {openIndex === i && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <p className="px-4 pb-4 text-[12px] text-[#6B7280] leading-relaxed border-t border-[#F3F4F6] pt-3">{item.a}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 };
 
