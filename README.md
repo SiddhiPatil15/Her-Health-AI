@@ -138,17 +138,7 @@ Our long-term vision is to build a **comprehensive AI-powered women’s health e
 
 # 📌 Project Status
 
-🚧 Currently under development as an AI-powered health innovation project.
-
----
-
-# 👨‍💻 Team
-
-Team Members:
-**Parth Pandit**
-* Riddhi
-* Siddhi
-* Priyanka
+🚧 Currently under development as an AI-powered health innovation pr
 
 ---
 
