@@ -140,39 +140,9 @@ Our long-term vision is to build a **comprehensive AI-powered women’s health e
 
 🚧 Currently under development as an AI-powered health innovation pr
 
----
-
 # ⭐ Future Improvements
 
 * wearable device integration
 * real-time health monitoring
 * advanced AI health prediction models
 * doctor consultation integration
-
----
-
-# 📬 Contact
-
-For questions, collaboration, or feedback, feel free to reach out.
-
----
-
-**HerHealth — Empowering Women Through AI-Driven Health Insights.**
-
----
-
-# Git Workflow (Quick Start)
-
-1. Update local `main`:
-	`git checkout main`
-	`git pull origin main`
-2. Create a feature branch:
-	`git checkout -b feature/your-change`
-3. Commit changes:
-	`git add -A`
-	`git commit -m "feat: describe your change"`
-4. Push branch:
-	`git push -u origin feature/your-change`
-5. Open PR to `main`.
-
-Detailed guide: see `docs/GIT_WORKFLOW.md`.
