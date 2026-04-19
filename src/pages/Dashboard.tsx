@@ -320,7 +320,6 @@ const Dashboard = () => {
                 )}
               </AnimatePresence>
             </div>
-            </div>
             <div className="flex items-center gap-2 md:gap-3 pl-2 md:pl-4 border-l border-[#F3F4F6]">
               <div className="text-right hidden lg:block">
                 <p className="text-[14px] font-bold text-[#1F2937] leading-tight">{userData?.fullName || auth.currentUser?.displayName || "User"}</p>
