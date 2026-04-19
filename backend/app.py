@@ -7,6 +7,10 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from sklearn.ensemble import RandomForestClassifier
 import google.generativeai as genai
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
@@ -221,15 +225,7 @@ def chat():
         risk = user_data.get('latestRisk', {}).get('riskLevel', 'not assessed')
         
         # Load API Key
-        api_key = os.environ.get("GEMINI_API_KEY")
-        if not api_key:
-             # Try local .env if available
-             try:
-                 from dotenv import load_dotenv
-                 load_dotenv()
-                 api_key = os.getenv("GEMINI_API_KEY")
-             except:
-                 pass
+        api_key = os.getenv("GEMINI_API_KEY")
 
         if not api_key:
             return jsonify({
@@ -238,7 +234,7 @@ def chat():
             
         genai.configure(api_key=api_key)
         
-        models_to_try = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
+        models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest']
         response_text = ""
         
         prompt = f"You are HerHealth AI. Profile: {stage}, Age {age}, Risk {risk}. Question: {message}. ANSWER DIRECTLY."
