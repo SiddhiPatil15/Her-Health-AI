@@ -16,56 +16,58 @@ const Landing = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Nav */}
-      <nav className="flex items-center justify-between px-8 py-4 max-w-[1280px] mx-auto">
+      <nav className="flex items-center justify-between px-6 md:px-8 py-4 max-w-[1280px] mx-auto">
         <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold text-body">H</div>
+          <div className="w-8 h-8 md:w-9 md:h-9 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold text-body">H</div>
           <span className="text-h3 text-foreground font-semibold">HerHealth</span>
         </div>
-        <div className="flex items-center gap-8">
+        <div className="hidden lg:flex items-center gap-8">
           <a href="#features" className="text-body text-muted-foreground hover:text-foreground transition-colors">Features</a>
           <a href="#how" className="text-body text-muted-foreground hover:text-foreground transition-colors">How It Works</a>
           <Link to="/login" className="text-body text-muted-foreground hover:text-foreground transition-colors">Sign In</Link>
-          <Link to="/signup" className="px-5 py-2.5 gradient-primary text-primary-foreground rounded-xl text-body font-medium hover-lift">
+        </div>
+        <div>
+          <Link to="/signup" className="px-4 md:px-5 py-2 md:py-2.5 gradient-primary text-primary-foreground rounded-xl text-[14px] md:text-body font-medium hover-lift">
             Get Started
           </Link>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="max-w-[1280px] mx-auto px-8 pt-16 pb-20">
-        <div className="grid grid-cols-2 gap-16 items-center">
+      <section className="max-w-[1280px] mx-auto px-6 md:px-8 pt-10 md:pt-16 pb-16 md:pb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-16 items-center text-center lg:text-left">
           <motion.div initial="hidden" animate="visible" className="space-y-6">
-            <motion.h1 variants={fadeUp} custom={1} className="text-[42px] leading-[1.15] font-bold text-foreground">
+            <motion.h1 variants={fadeUp} custom={1} className="text-[32px] md:text-[42px] leading-[1.15] font-bold text-foreground">
               AI-Powered Personalized Health Companion for <span className="text-primary">Women</span>
             </motion.h1>
-            <motion.p variants={fadeUp} custom={2} className="text-body text-muted-foreground max-w-md leading-relaxed text-[16px]">
+            <motion.p variants={fadeUp} custom={2} className="text-body text-muted-foreground max-w-md leading-relaxed text-[15px] md:text-[16px] mx-auto lg:mx-0">
               Helping women manage metabolic health during pregnancy and menopause with personalized AI insights and monthly progress reports.
             </motion.p>
-            <motion.div variants={fadeUp} custom={3} className="flex gap-4 pt-2">
-              <Link to="/signup" className="px-7 py-3 gradient-primary text-primary-foreground rounded-xl text-body font-medium hover-lift flex items-center gap-2">
+            <motion.div variants={fadeUp} custom={3} className="flex flex-col sm:flex-row gap-4 pt-2 justify-center lg:justify-start">
+              <Link to="/signup" className="px-7 py-3 gradient-primary text-primary-foreground rounded-xl text-body font-medium hover-lift flex items-center justify-center gap-2">
                 Start Health Journey <ArrowRight className="w-4 h-4" />
               </Link>
-              <a href="#features" className="px-7 py-3 bg-card border border-border text-foreground rounded-xl text-body font-medium hover-lift">
+              <a href="#features" className="px-7 py-3 bg-card border border-border text-foreground rounded-xl text-body font-medium hover-lift flex justify-center">
                 Learn More
               </a>
             </motion.div>
           </motion.div>
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }}>
-            <img src={heroIllustration} alt="Woman doing yoga" className="w-full max-w-md mx-auto" />
+            <img src={heroIllustration} alt="Woman doing yoga" className="w-full max-w-sm md:max-w-md mx-auto" />
           </motion.div>
         </div>
       </section>
 
       {/* Problem */}
-      <section className="bg-card py-20">
-        <div className="max-w-[1280px] mx-auto px-8">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-12">
-            <motion.h2 variants={fadeUp} custom={0} className="text-h1 text-foreground mb-3">Why This Matters</motion.h2>
+      <section className="bg-card py-16 md:py-20">
+        <div className="max-w-[1280px] mx-auto px-6 md:px-8">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-10 md:mb-12">
+            <motion.h2 variants={fadeUp} custom={0} className="text-[28px] md:text-h1 text-foreground mb-3">Why This Matters</motion.h2>
             <motion.p variants={fadeUp} custom={1} className="text-body text-muted-foreground max-w-lg mx-auto">
               Metabolic health issues affect millions of women during critical life stages.
             </motion.p>
           </motion.div>
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               { stat: "14%", desc: "of pregnancies develop gestational diabetes", icon: Activity },
               { stat: "50%", desc: "risk of developing Type 2 Diabetes later in life", icon: Shield },
@@ -89,11 +91,11 @@ const Landing = () => {
       </section>
 
       {/* Solution / Features */}
-      <section id="features" className="py-20 max-w-[1280px] mx-auto px-8">
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-12">
-          <motion.h2 variants={fadeUp} custom={0} className="text-h1 text-foreground mb-3">How HerHealth Helps</motion.h2>
+      <section id="features" className="py-16 md:py-20 max-w-[1280px] mx-auto px-6 md:px-8">
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-10 md:mb-12">
+          <motion.h2 variants={fadeUp} custom={0} className="text-[28px] md:text-h1 text-foreground mb-3">How HerHealth Helps</motion.h2>
         </motion.div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             { icon: Brain, title: "AI Risk Prediction", desc: "Predictive analytics for metabolic risk assessment", gradient: "gradient-primary" },
             { icon: LineChart, title: "Personalized Guidance", desc: "Custom lifestyle plans based on your health data", gradient: "gradient-purple" },
@@ -104,9 +106,9 @@ const Landing = () => {
               key={i}
               initial="hidden" whileInView="visible" viewport={{ once: true }}
               variants={fadeUp} custom={i}
-              className="bg-card rounded-2xl p-6 hover-lift card-shadow border border-border"
+              className="bg-card rounded-2xl p-6 hover-lift card-shadow border border-border text-center md:text-left"
             >
-              <div className={`w-12 h-12 rounded-xl ${gradient} flex items-center justify-center mb-4`}>
+              <div className={`w-12 h-12 rounded-xl ${gradient} flex items-center justify-center mb-4 mx-auto md:mx-0`}>
                 <Icon className="w-5 h-5 text-primary-foreground" />
               </div>
               <h3 className="text-h3 text-foreground mb-2">{title}</h3>
@@ -117,12 +119,12 @@ const Landing = () => {
       </section>
 
       {/* How It Works */}
-      <section id="how" className="bg-card py-20">
-        <div className="max-w-[1280px] mx-auto px-8">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-12">
-            <motion.h2 variants={fadeUp} custom={0} className="text-h1 text-foreground mb-3">How It Works</motion.h2>
+      <section id="how" className="bg-card py-16 md:py-20">
+        <div className="max-w-[1280px] mx-auto px-6 md:px-8">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-10 md:mb-12">
+            <motion.h2 variants={fadeUp} custom={0} className="text-[28px] md:text-h1 text-foreground mb-3">How It Works</motion.h2>
           </motion.div>
-          <div className="grid grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               { step: "01", title: "Enter Your Health Data", desc: "Share your health metrics, history, and current stage — pregnancy or menopause." },
               { step: "02", title: "AI Analyzes Patterns", desc: "Our AI engine processes your data to identify metabolic patterns and risks." },
@@ -146,12 +148,12 @@ const Landing = () => {
       </section>
 
       {/* CTA */}
-      <section className="py-20 max-w-[1280px] mx-auto px-8">
+      <section className="py-16 md:py-20 max-w-[1280px] mx-auto px-6 md:px-8">
         <motion.div
           initial="hidden" whileInView="visible" viewport={{ once: true }}
-          className="gradient-primary rounded-3xl p-16 text-center"
+          className="gradient-primary rounded-3xl p-10 md:p-16 text-center"
         >
-          <motion.h2 variants={fadeUp} custom={0} className="text-[32px] font-bold text-primary-foreground mb-4">
+          <motion.h2 variants={fadeUp} custom={0} className="text-[28px] md:text-[32px] font-bold text-primary-foreground mb-4">
             Start Your Health Journey Today
           </motion.h2>
           <motion.p variants={fadeUp} custom={1} className="text-body text-primary-foreground/80 mb-8 max-w-md mx-auto">
@@ -166,12 +168,12 @@ const Landing = () => {
       </section>
 
       {/* Team */}
-      <section className="bg-card py-20">
-        <div className="max-w-[1280px] mx-auto px-8">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-12">
-            <motion.h2 variants={fadeUp} custom={0} className="text-h1 text-foreground mb-3">Meet the Team</motion.h2>
+      <section className="bg-card py-16 md:py-20">
+        <div className="max-w-[1280px] mx-auto px-6 md:px-8">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-10 md:mb-12">
+            <motion.h2 variants={fadeUp} custom={0} className="text-[28px] md:text-h1 text-foreground mb-3">Meet the Team</motion.h2>
           </motion.div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             {[
               "Siddhi Patil",
               "Riddhi Patil",
@@ -182,13 +184,13 @@ const Landing = () => {
                 key={i}
                 initial="hidden" whileInView="visible" viewport={{ once: true }}
                 variants={fadeUp} custom={i}
-                className="bg-background rounded-2xl p-6 text-center hover-lift card-shadow"
+                className="bg-background rounded-2xl p-4 md:p-6 text-center hover-lift card-shadow"
               >
-                <div className="w-20 h-20 rounded-full gradient-primary flex items-center justify-center mx-auto mb-4 text-primary-foreground font-bold text-h2">
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full gradient-primary flex items-center justify-center mx-auto mb-4 text-primary-foreground font-bold text-[24px] md:text-h2">
                   {name.charAt(0)}
                 </div>
-                <h3 className="text-h3 text-foreground mb-1">{name}</h3>
-                <p className="text-body text-muted-foreground">Co-Creator</p>
+                <h3 className="text-[16px] md:text-h3 text-foreground mb-1">{name}</h3>
+                <p className="text-[12px] md:text-body text-muted-foreground">Co-Creator</p>
               </motion.div>
             ))}
           </div>
@@ -197,17 +199,17 @@ const Landing = () => {
 
       {/* Footer */}
       <footer className="bg-card border-t border-border py-12">
-        <div className="max-w-[1280px] mx-auto px-8 flex items-center justify-between">
+        <div className="max-w-[1280px] mx-auto px-6 md:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold text-caption">H</div>
             <span className="text-body font-semibold text-foreground">HerHealth</span>
           </div>
-          <div className="flex gap-8">
+          <div className="flex flex-wrap justify-center gap-6 md:gap-8">
             {["About", "Privacy", "Contact", "Team"].map(link => (
               <a key={link} href="#" className="text-body text-muted-foreground hover:text-foreground transition-colors">{link}</a>
             ))}
           </div>
-          <p className="text-caption text-muted-foreground">© 2026 HerHealth. All rights reserved.</p>
+          <p className="text-caption text-muted-foreground text-center">© 2026 HerHealth. All rights reserved.</p>
         </div>
       </footer>
     </div>
