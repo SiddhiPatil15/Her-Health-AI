@@ -103,66 +103,74 @@ const AIChat = () => {
     setThinking(true);
 
     try {
-      // Try backend first
-      const API_BASE = (import.meta.env.VITE_ML_API_URL as string | undefined) ?? "http://localhost:5001";
       let responseText = "";
 
+      // 1. Try Backend/ML API first
       try {
+        const API_BASE = (import.meta.env.VITE_ML_API_URL as string | undefined) ?? "http://localhost:5001";
         const response = await fetch(`${API_BASE}/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: text, userData }),
-          signal: AbortSignal.timeout(5000), // 5s timeout
+          signal: AbortSignal.timeout(4000),
         });
         if (response.ok) {
           const data = await response.json();
-          responseText = data.response ?? "";
-          if (responseText.includes("reasoning brain is currently disconnected")) {
-            responseText = ""; // Trigger local fallback immediately
+          if (data.response && !data.response.includes("reasoning brain")) {
+            responseText = data.response;
           }
         }
-      } catch {
-        // Backend offline — fallback to Gemini directly
+      } catch (err) {
+        console.log("Backend offline, trying Gemini...");
       }
 
-      // Fallback: use Gemini directly from frontend
+      // 2. Try Gemini directly from frontend
       if (!responseText) {
         const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
-        if (geminiKey) {
-          const genAI = new GoogleGenerativeAI(geminiKey);
-          const modelsToTry = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
-          const systemPrompt = buildSystemPrompt(userData ?? {});
-          
-          for (const modelName of modelsToTry) {
-            try {
-              const model = genAI.getGenerativeModel({ model: modelName });
-              const result = await model.generateContent(`${systemPrompt}\n\nUser asks: "${text}"`);
+        if (!geminiKey || geminiKey === "your_api_key_here") {
+          console.error("VITE_GEMINI_API_KEY is missing or invalid.");
+        } else {
+          try {
+            const genAI = new GoogleGenerativeAI(geminiKey);
+            // gemini-1.5-flash is the most reliable and fastest
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const systemPrompt = buildSystemPrompt(userData ?? {});
+            
+            const result = await model.generateContent({
+              contents: [{ role: "user", parts: [{ text: `${systemPrompt}\n\nUser Question: ${text}` }] }],
+              generationConfig: {
+                maxOutputTokens: 500,
+                temperature: 0.7,
+              },
+            });
+            
+            const candidate = result.response.candidates?.[0];
+            if (candidate?.content?.parts?.[0]?.text) {
+              responseText = candidate.content.parts[0].text;
+            } else {
               responseText = result.response.text();
-              if (responseText) {
-                 console.log(`Successfully generated response using ${modelName}`);
-                 break;
-              }
-            } catch (geminiErr: any) {
-              console.warn(`Model ${modelName} failed (potentially rate limited):`, geminiErr);
-              // Loop continues to the next available model
+            }
+          } catch (geminiErr: any) {
+            console.error("Gemini API Error:", geminiErr);
+            // If it's a model not found error, try one more
+            if (geminiErr.message?.includes("not found")) {
+               const model = new GoogleGenerativeAI(geminiKey).getGenerativeModel({ model: "gemini-pro" });
+               const result = await model.generateContent(`${buildSystemPrompt(userData ?? {})}\n\nUser: ${text}`);
+               responseText = result.response.text();
             }
           }
         }
       }
 
       if (!responseText) {
+        console.warn("Falling back to rule-based responses.");
         responseText = generateRuleBasedResponse(text, userData);
       }
 
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", text: responseText },
-      ]);
+      setMessages((prev) => [...prev, { role: "assistant", text: responseText }]);
     } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", text: generateRuleBasedResponse(text, userData) },
-      ]);
+      console.error("Final catch in sendMessage:", err);
+      setMessages((prev) => [...prev, { role: "assistant", text: generateRuleBasedResponse(text, userData) }]);
     } finally {
       setThinking(false);
     }
