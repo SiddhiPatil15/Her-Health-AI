@@ -388,44 +388,7 @@ const DashboardHome = ({ userData, firstName, setActiveTab, scores }: any) => (
         />
       </div>
 
-      {/* Health Resources */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-h3 font-bold text-gray-800">Personalized Resources</h3>
-          <span className="text-primary font-bold text-sm cursor-pointer hover:underline">View All</span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[
-            { title: "Gestational Diabetes Prevention", type: "Article", source: "Mayo Clinic", link: "https://www.mayoclinic.org/diseases-conditions/gestational-diabetes/symptoms-causes/syc-20355339" },
-            { title: "Metabolic Health in Menopause", type: "Guide", source: "Harvard Health", link: "https://www.health.harvard.edu/womens-health/menopause-and-metabolic-health" },
-          ].map((article, i) => (
-            <div key={i} className="p-4 bg-white rounded-3xl border border-[#F3F4F6] flex items-center justify-between group hover:shadow-md transition-all">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-500 font-bold">
-                  📄
-                </div>
-                <div>
-                  <p className="font-bold text-sm text-gray-800 line-clamp-1">{article.title}</p>
-                  <p className="text-[11px] text-gray-500">{article.source}</p>
-                </div>
-              </div>
-              <button 
-                onClick={async () => {
-                  const user = auth.currentUser;
-                  if (user) {
-                    const { saveArticle } = await import("../lib/healthService");
-                    await saveArticle(user.uid, article);
-                    toast.success("Saved to your resources!");
-                  }
-                }}
-                className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-rose-50 hover:text-primary transition-all"
-              >
-                <Bookmark className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
-        </div>
-      </section>
+
 
       {/* Middle Section Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

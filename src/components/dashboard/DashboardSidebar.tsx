@@ -11,6 +11,14 @@ const navItems = [
   { icon: Settings, path: "/dashboard?tab=settings", label: "Settings" },
 ];
 
+const mobileNavItems = [
+  { icon: Home, path: "/dashboard", label: "Home" },
+  { icon: Activity, path: "/dashboard?tab=activity", label: "Health Tracker" },
+  { icon: Sparkles, path: "/chat", label: "AI Insights" },
+  { icon: Bookmark, path: "/dashboard?tab=saved", label: "Saved" },
+  { icon: Settings, path: "/dashboard?tab=settings", label: "Settings" },
+];
+
 const DashboardSidebar = () => {
   const location = useLocation();
 
@@ -44,7 +52,7 @@ const DashboardSidebar = () => {
 
       {/* Mobile Bottom Nav */}
       <nav className="md:hidden fixed bottom-0 left-0 w-full h-[68px] bg-white border-t border-[#F3F4F6] flex items-center justify-between px-6 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.08)] overflow-x-auto no-scrollbar gap-6">
-        {navItems.map(({ icon: Icon, path, label }) => {
+        {mobileNavItems.map(({ icon: Icon, path, label }) => {
           const active = location.pathname.includes(path.split('?')[0]);
           return (
             <Link

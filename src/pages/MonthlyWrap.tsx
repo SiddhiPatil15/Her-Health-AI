@@ -27,10 +27,17 @@ const MonthlyWrap = () => {
 
     Promise.all([
       getDoc(doc(db, "users", user.uid)),
-      getHealthLogs(user.uid, 30),
+      getHealthLogs(user.uid, 100),
     ]).then(([snap, healthLogs]) => {
       if (snap.exists()) setUserData(snap.data());
-      setLogs(healthLogs);
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      const monthlyLogs = healthLogs.filter(l => {
+        const d = new Date(l.date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      });
+      setLogs(monthlyLogs);
     }).finally(() => setLoading(false));
   }, []);
 
