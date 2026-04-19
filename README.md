@@ -1,148 +1,81 @@
-# HerHealth 🌸
-
-**AI-Powered Personalized Health Companion for Women**
-
-HerHealth is a modern **AI-powered women’s health platform** designed to support metabolic health during critical life stages such as **pregnancy and menopause**. The platform provides personalized health insights, lifestyle recommendations, and AI-generated monthly progress reports to help women monitor and improve their wellbeing.
+<div align="center">
+  <img src="./public/favicon.ico" alt="Logo" width="80" height="80">
+  <h1 align="center">HerHealth AI 🌸</h1>
+  <p align="center">
+    <strong>AI-Powered Personalized Health Companion for Women</strong>
+    <br />
+    A modern, intelligent platform designed to support metabolic health during critical life stages such as pregnancy and menopause.
+  </p>
+</div>
 
 ---
 
-# 🚀 Overview
-
-Women experience major hormonal and metabolic changes during pregnancy and menopause. These changes can increase the risk of conditions like obesity and metabolic disorders.
-
-HerHealth aims to address this challenge by combining **Artificial Intelligence, health data analytics, and intuitive dashboards** to provide personalized health guidance.
+## 🚀 Overview
+Women experience major hormonal and metabolic changes during critical life stages like pregnancy and menopause, which significantly alter metabolic patterns. HerHealth combines **Artificial Intelligence, real-time health data tracking, and intuitive visual dashboards** to provide personalized, intelligent guidance.
 
 The platform empowers users to:
-
-* Track health indicators
-* Receive AI-powered insights
-* Monitor lifestyle improvements
-* Understand metabolic risks
-* Stay motivated through progress reports
+- Track vital health indicators and daily activities
+- Receive **real-time AI-powered medical insights**
+- Monitor lifestyle improvements and metabolic risks
+- Stay motivated through dynamic progress reports
 
 ---
 
-# ✨ Key Features
+## ✨ Key Features
 
-## 1. AI Health Insights
+### 🤖 Resilient Multi-Model AI Chatbot
+Experience our highly advanced AI Health Companion. Powered by a resilient fallback architecture, it seamlessly transitions between Google's top-tier AI models (**Gemini 2.5 Flash**, **Gemini 2.0 Flash**, and **Gemini 2.5 Pro**) to ensure zero-downtime, intelligent, and context-aware medical responses.
 
-HerHealth analyzes user health data and generates **personalized insights** to help users understand their metabolic health patterns.
+### 🌙 Global Dark Mode
+A meticulously crafted, fully responsive Dark Theme. Instantly toggleable from the settings, this feature intelligently transitions the entire application into a sleek, deep slate environment (`#0f172a`) to reduce eye strain and provide a premium night-time aesthetic.
 
-## 2. Health Metrics Dashboard
+### 📊 Health Metrics & Activity Tracking
+Log daily steps, active minutes, and vital statistics into a beautifully designed tracking interface. Your data is instantly pushed to your personalized dashboard and securely synced to Firebase.
 
-A clean and modern dashboard displays:
+### 📅 Smart Appointments & Reminders
+A fully functional appointment scheduling system. Save your upcoming consultations and instantly receive an automated toast notification reminding you of your schedule as soon as you access your dashboard.
 
-* Health Score
-* Activity Level
-* Sleep Quality
-* Overall Progress
-
-These metrics help users monitor their daily and long-term health trends.
-
-## 3. Personalized Lifestyle Recommendations
-
-Based on health indicators, the system provides **AI-driven suggestions** related to:
-
-* Physical activity
-* Sleep improvement
-* Lifestyle habits
-
-## 4. Monthly Health Wrap
-
-Inspired by Spotify Wrapped–style insights, HerHealth generates a **monthly progress report** showing:
-
-* achievements
-* improvements
-* future health suggestions
-
-## 5. Women-Centric Health Focus
-
-The platform is designed specifically for women, addressing health challenges related to:
-
-* pregnancy
-* menopause
-* metabolic health
-* lifestyle management
+### 📑 Curated Saved Resources
+A built-in resource manager allowing users to save and directly launch curated external resources, such as educational YouTube videos on Menopause relief or comprehensive Gestational Diabetes articles from the Mayo Clinic.
 
 ---
 
-# 🧠 AI & Data Component
+## 🛠 Tech Stack
 
-The platform uses health datasets related to:
+**Frontend Framework & Design:**
+- React.js & Vite
+- Tailwind CSS (with advanced Dark Mode CSS overrides)
+- Recharts / Chart.js for data visualization
+- Framer Motion & Lucide React for animations and iconography
 
-* obesity prediction
-* diabetes risk prediction
-* metabolic health indicators
+**Backend & Data Persistence:**
+- Firebase Authentication (Secure login & sessions)
+- Firebase Firestore (Cloud Database)
+- LocalStorage state management
 
-Machine learning models analyze these factors to generate **risk insights and personalized recommendations**.
-
----
-
-# 🛠 Tech Stack
-
-### Frontend
-
-* React.js
-* Tailwind CSS
-* Recharts / Chart.js
-* Lucide Icons
-
-### Backend
-
-* Firebase (Authentication + Database)
-
-### AI Layer
-
-* OpenAI / Gemini APIs
-* Machine Learning models trained on health datasets
+**AI & Machine Learning Layer:**
+- **Google Generative AI SDK** (Gemini 2.5 / 2.0)
+- Python ML models (for background dataset analysis and risk prediction)
 
 ---
 
-# 🎨 UI / UX Design
-
+## 🎨 UI / UX Design
 The interface follows a **modern FemTech design approach**:
-
-* soft pink wellness palette
-* clean healthcare dashboard layout
-* rounded cards and minimal shadows
-* responsive design
+- Soft pink & indigo wellness palette
+- Clean, minimal healthcare dashboard layout with glassmorphic cards
+- Highly responsive rail-navigation sidebar for perfect mobile and desktop viewing
 
 ---
 
-# 📊 System Modules
-
-The application includes the following modules:
-
-* Landing Page
-* User Authentication
-* Health Dashboard
-* Health Data Tracker
-* AI Insights Panel
-* Monthly Health Wrap
-* AI Chat Assistant
+## 🔒 Privacy & Data Ethics
+Health data is handled with extreme privacy considerations. User information is securely stored inside an authenticated Google Firebase cluster and utilized strictly to generate personalized, helpful insights on the user's local client.
 
 ---
 
-# 🔒 Privacy & Data Ethics
+## 📌 Project Status
+🚧 Currently under active development as an AI-powered health innovation platform.
 
-Health data is handled with privacy considerations in mind.
-User information is securely stored and used only to generate personalized insights.
-
----
-
-# 🌍 Vision
-
-Our long-term vision is to build a **comprehensive AI-powered women’s health ecosystem** that empowers millions of women to take control of their health through personalized and preventive care.
-
----
-
-# 📌 Project Status
-
-🚧 Currently under development as an AI-powered health innovation pr
-
-# ⭐ Future Improvements
-
-* wearable device integration
-* real-time health monitoring
-* advanced AI health prediction models
-* doctor consultation integration
+### ⭐ Future Improvements
+* Wearable device integration (Apple Health / Google Fit)
+* Real-time physiological monitoring
+* Advanced doctor consultation integration
