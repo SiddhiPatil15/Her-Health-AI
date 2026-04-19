@@ -161,12 +161,11 @@ const AIChat = () => {
             }
           } catch (geminiErr: any) {
             console.error("Gemini API Error:", geminiErr);
-            // If it's a model not found error, try one more
-            if (geminiErr.message?.includes("not found")) {
-               const model = new GoogleGenerativeAI(geminiKey).getGenerativeModel({ model: "gemini-pro" });
-               const result = await model.generateContent(`${buildSystemPrompt(userData ?? {})}\n\nUser: ${text}`);
-               responseText = result.response.text();
-            }
+            const errMsg = geminiErr.message || "Unknown API Error";
+            // Show toast so the user can see what's wrong
+            import("sonner").then(({ toast }) => {
+              toast.error(`Gemini Error: ${errMsg.slice(0, 50)}... Check console for details.`);
+            });
           }
         }
       }
@@ -177,8 +176,11 @@ const AIChat = () => {
       }
 
       setMessages((prev) => [...prev, { role: "assistant", text: responseText }]);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Final catch in sendMessage:", err);
+      import("sonner").then(({ toast }) => {
+        toast.error(`Chat Error: ${err.message || "Unknown error"}`);
+      });
       setMessages((prev) => [...prev, { role: "assistant", text: generateRuleBasedResponse(text, userData) }]);
     } finally {
       setThinking(false);

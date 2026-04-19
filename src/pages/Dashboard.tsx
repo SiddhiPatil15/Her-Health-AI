@@ -509,11 +509,11 @@ const DashboardHome = ({ userData, firstName, setActiveTab, scores }: any) => (
             <input 
               type="text" 
               readOnly
-              onClick={() => window.location.href = '/chat'}
+              onClick={() => navigate('/chat')}
               placeholder="Click here to open Full-Screen AI Chatbot..." 
               className="w-full bg-[#F3F4F6] rounded-full py-4 pl-14 pr-12 text-[14px] border-none focus:ring-2 focus:ring-primary/20 transition-all outline-none cursor-pointer text-muted-foreground"
             />
-            <button onClick={() => window.location.href = '/chat'} className="absolute right-3 p-2 bg-white rounded-full shadow-sm text-primary hover:scale-110 active:scale-95 transition-transform">
+            <button onClick={() => navigate('/chat')} className="absolute right-3 p-2 bg-white rounded-full shadow-sm text-primary hover:scale-110 active:scale-95 transition-transform">
               <ChevronRight className="w-4 h-4" />
             </button>
          </div>
