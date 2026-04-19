@@ -272,6 +272,13 @@ const Dashboard = () => {
                 )}
               </AnimatePresence>
             </div>
+            <button 
+              onClick={() => setActiveTab("calendar")}
+              className={`p-2.5 rounded-full transition-colors ${activeTab === 'calendar' ? 'bg-rose-50 text-primary' : 'hover:bg-gray-100 text-[#4B5563]'}`}
+              title="Health Calendar"
+            >
+              <Calendar size={20} />
+            </button>
             <div className="relative cursor-pointer hover:bg-rose-50 p-2.5 rounded-full transition-colors group">
               <div onClick={() => setShowNotif(!showNotif)}>
                 <Bell className="w-5 h-5 text-[#4B5563] group-hover:text-primary transition-colors" />
@@ -643,25 +650,28 @@ const SavedView = ({ setActiveTab }: any) => {
     }
   };
 
+  const handleUpload = async () => {
+    const title = prompt("Enter title for the resource:");
+    const link = prompt("Enter URL:");
+    if (title && link) {
+      const user = auth.currentUser;
+      if (user) {
+        setLoading(true);
+        const { saveArticle } = await import("../lib/healthService");
+        const id = await saveArticle(user.uid, { title, link, type: "Manual", source: "User Upload" });
+        setSavedItems(prev => [{ id, title, link, type: "Manual", source: "User Upload" }, ...prev]);
+        setLoading(false);
+        toast.success("Content uploaded successfully!");
+      }
+    }
+  };
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-8 max-w-4xl mx-auto w-full space-y-6">
       <div className="flex items-center justify-between">
         <ViewHeader title="Saved Items" icon={<Bookmark className="text-indigo-500" />} setActiveTab={setActiveTab} />
         <button 
-          onClick={() => {
-            const title = prompt("Enter title:");
-            const link = prompt("Enter URL:");
-            if (title && link) {
-              const user = auth.currentUser;
-              if (user) {
-                import("../lib/healthService").then(({ saveArticle }) => {
-                   saveArticle(user.uid, { title, link, type: "Manual", source: "User Upload" });
-                   toast.success("Content uploaded!");
-                   window.location.reload(); // Refresh to show new item
-                });
-              }
-            }
-          }}
+          onClick={handleUpload}
           className="bg-primary text-white px-6 py-2 rounded-2xl font-bold shadow-lg shadow-rose-100 hover:scale-105 transition-all"
         >
           + Upload Link
@@ -1129,9 +1139,17 @@ const AITipBox = ({ userData }: any) => {
              <span className="text-[12px] font-bold text-primary uppercase tracking-wider">AI Quick Tip</span>
            </div>
            <button 
-             onClick={handleSaveTip}
-             className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center hover:bg-white transition-colors"
-             title="Save Tip"
+            onClick={() => setActiveTab("calendar")}
+            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors relative ${activeTab === 'calendar' ? 'bg-rose-50 text-primary' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
+            title="Health Calendar"
+          >
+            <Calendar size={20} />
+          </button>
+
+          <button 
+            onClick={() => setShowNotif(!showNotif)}
+            className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors relative"
+            title="Save Tip"
            >
              <Bookmark className="w-4 h-4 text-primary" />
            </button>

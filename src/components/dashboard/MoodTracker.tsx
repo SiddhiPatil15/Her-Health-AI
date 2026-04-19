@@ -61,8 +61,9 @@ export const MoodTracker = () => {
       toast.success("Mood logged for today!");
       setNote("");
       setSelectedMood(null);
-    } catch (error) {
-      toast.error("Error saving mood");
+    } catch (error: any) {
+      console.error("Error saving mood:", error);
+      toast.error(`Error saving mood: ${error.message || "Unknown error"}`);
     }
   };
 
