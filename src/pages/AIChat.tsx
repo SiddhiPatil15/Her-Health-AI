@@ -105,64 +105,55 @@ const AIChat = () => {
     try {
       let responseText = "";
 
-      // 1. Try Backend/ML API first
+      // 1. Try backend API first (Secure & Robust)
       try {
-        const API_BASE = (import.meta.env.VITE_ML_API_URL as string | undefined) ?? "http://localhost:5001";
-        const response = await fetch(`${API_BASE}/chat`, {
+        const response = await fetch("http://localhost:5001/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: text, userData }),
-          signal: AbortSignal.timeout(4000),
+          body: JSON.stringify({
+            message: text,
+            userData: userData
+          })
         });
+        
         if (response.ok) {
           const data = await response.json();
-          if (data.response && !data.response.includes("reasoning brain")) {
+          if (data.response) {
             responseText = data.response;
+            console.log("Success using backend API");
           }
+        } else {
+          console.warn("Backend API failed, trying direct Gemini fallback...");
         }
-      } catch (err) {
-        console.log("Backend offline, trying Gemini...");
+      } catch (backendErr) {
+        console.warn("Backend connection failed:", backendErr);
       }
 
-      // 2. Try Gemini directly from frontend
+      // 2. Try Gemini directly from frontend (Fallback)
       if (!responseText) {
         const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
-        if (!geminiKey || geminiKey === "your_api_key_here") {
-          console.error("VITE_GEMINI_API_KEY is missing or invalid.");
-        } else {
+        if (geminiKey && geminiKey !== "your_api_key_here") {
           try {
             const genAI = new GoogleGenerativeAI(geminiKey);
-            const modelsToTry = ["gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
-            let model;
+            const modelsToTry = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-pro"];
             const systemPrompt = buildSystemPrompt(userData ?? {});
             
             for (const m of modelsToTry) {
               try {
-                model = genAI.getGenerativeModel({ model: m });
+                const model = genAI.getGenerativeModel({ model: m });
                 const result = await model.generateContent({
                   contents: [{ role: "user", parts: [{ text: `${systemPrompt}\n\nUser Question: ${text}` }] }],
-                  generationConfig: { maxOutputTokens: 500, temperature: 0.7 },
+                  generationConfig: { maxOutputTokens: 1000, temperature: 0.7 },
                 });
-                
-                // Extract text safely
                 const textResult = result.response.text();
                 if (textResult) {
                   responseText = textResult;
-                  console.log(`Success with model ${m}`);
                   break;
                 }
-              } catch (e) {
-                console.warn(`Model ${m} failed, trying next...`);
-                continue;
-              }
+              } catch { continue; }
             }
           } catch (geminiErr: any) {
-            console.error("Gemini API Error:", geminiErr);
-            const errMsg = geminiErr.message || "Unknown API Error";
-            // Show toast so the user can see what's wrong
-            import("sonner").then(({ toast }) => {
-              toast.error(`Gemini Error: ${errMsg.slice(0, 50)}... Check console for details.`);
-            });
+            console.error("Gemini Direct Error:", geminiErr);
           }
         }
       }
