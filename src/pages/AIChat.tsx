@@ -130,7 +130,7 @@ const AIChat = () => {
         const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
         if (geminiKey) {
           const genAI = new GoogleGenerativeAI(geminiKey);
-          const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite"];
+          const modelsToTry = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
           const systemPrompt = buildSystemPrompt(userData ?? {});
           
           for (const modelName of modelsToTry) {
