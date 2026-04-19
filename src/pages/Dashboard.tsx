@@ -243,17 +243,18 @@ const Dashboard = () => {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-y-auto">
+      <div className="flex-1 flex flex-col overflow-y-auto w-full overflow-x-hidden">
         {/* Top Header */}
-        <header className="h-20 flex items-center justify-between px-8 bg-white/80 backdrop-blur-md border-b border-[#F3F4F6] sticky top-0 z-40">
+        <header className="h-20 flex items-center justify-between px-4 lg:px-8 bg-white/80 backdrop-blur-md border-b border-[#F3F4F6] sticky top-0 z-40">
           <button 
             onClick={() => setActiveTab('clock')}
-            className="px-6 py-2.5 bg-[#FF758C] text-white rounded-full font-semibold text-[14px] hover:shadow-lg hover:shadow-rose-100 transition-all active:scale-95"
+            className="px-4 md:px-6 py-2 bg-[#FF758C] text-white rounded-full font-semibold text-[13px] md:text-[14px] hover:shadow-lg hover:shadow-rose-100 transition-all active:scale-95 whitespace-nowrap"
           >
-            Make An Appointment
+            <span className="hidden md:inline">Make An Appointment</span>
+            <span className="md:hidden">Book</span>
           </button>
           
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2 md:gap-6">
             <div className="relative group hidden md:block">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF] group-focus-within:text-primary transition-colors" />
               <input 
@@ -319,12 +320,13 @@ const Dashboard = () => {
                 )}
               </AnimatePresence>
             </div>
-            <div className="flex items-center gap-3 pl-4 border-l border-[#F3F4F6]">
+            </div>
+            <div className="flex items-center gap-2 md:gap-3 pl-2 md:pl-4 border-l border-[#F3F4F6]">
               <div className="text-right hidden lg:block">
                 <p className="text-[14px] font-bold text-[#1F2937] leading-tight">{userData?.fullName || auth.currentUser?.displayName || "User"}</p>
                 <p className="text-[11px] text-muted-foreground font-medium">{userData?.broadHealthStage ? (userData.broadHealthStage.charAt(0).toUpperCase() + userData.broadHealthStage.slice(1)) : "Member"}</p>
               </div>
-              <div className="w-10 h-10 rounded-full bg-rose-100 overflow-hidden border-2 border-white shadow-sm ring-1 ring-rose-200 flex items-center justify-center text-primary font-bold">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-rose-100 overflow-hidden border-2 border-white shadow-sm ring-1 ring-rose-200 flex items-center justify-center text-primary font-bold text-sm md:text-base shrink-0">
                 {firstName[0]}
               </div>
               <button 
@@ -348,21 +350,21 @@ const DashboardHome = ({ userData, firstName, setActiveTab, scores }: any) => (
   <motion.div 
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
-    className="p-8 lg:grid lg:grid-cols-12 gap-8 max-w-[1600px] mx-auto w-full"
+    className="p-4 lg:p-8 lg:grid lg:grid-cols-12 gap-8 max-w-[1600px] mx-auto w-full"
   >
     {/* Main Area */}
-    <div className="lg:col-span-8 space-y-8">
+    <div className="lg:col-span-8 space-y-6 md:space-y-8">
       {/* Hero Welcome */}
-      <div className="bg-[#FFE4E8] rounded-[40px] p-10 flex items-center justify-between relative overflow-hidden h-[240px] group">
+      <div className="bg-[#FFE4E8] rounded-[32px] md:rounded-[40px] p-6 md:p-10 flex flex-col md:flex-row items-start md:items-center justify-between relative overflow-hidden min-h-[200px] md:h-[240px] group">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-white/30 transition-all duration-700"></div>
-        <div className="z-10 space-y-4 max-w-[60%]">
-          <h1 className="text-[36px] font-bold text-[#1F2937]">Hope you're doing well {firstName}!</h1>
-          <p className="text-[#6B7280] text-[16px] leading-relaxed font-medium">We have curated health insights for you.</p>
+        <div className="z-10 space-y-2 md:space-y-4 w-full md:max-w-[60%] relative">
+          <h1 className="text-[26px] md:text-[36px] font-bold text-[#1F2937] leading-tight">Hope you're doing well {firstName}!</h1>
+          <p className="text-[#6B7280] text-[14px] md:text-[16px] leading-relaxed font-medium">We have curated health insights for you.</p>
           <div className="pt-2">
-            <span onClick={() => setActiveTab("stats")} className="text-primary font-bold text-[15px] border-b-2 border-primary cursor-pointer hover:pb-1 transition-all">View Insights ➜</span>
+            <span onClick={() => setActiveTab("stats")} className="text-primary font-bold text-[14px] md:text-[15px] border-b-2 border-primary cursor-pointer hover:pb-1 transition-all">View Insights ➜</span>
           </div>
         </div>
-        <div className="absolute right-10 bottom-0 top-0 w-[40%] flex items-end">
+        <div className="absolute right-0 bottom-0 top-0 w-1/2 md:w-[40%] flex items-end opacity-30 md:opacity-100 pointer-events-none">
            <img 
             src="https://img.freepik.com/free-vector/thoughtful-woman-concept-illustration_114360-1412.jpg" 
             className="w-full object-contain object-bottom h-[90%] mix-blend-multiply" 
