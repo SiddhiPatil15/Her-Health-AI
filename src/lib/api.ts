@@ -3,7 +3,10 @@
  * Calls the Flask prediction service running at VITE_ML_API_URL.
  */
 
-const API_BASE = (import.meta.env.VITE_ML_API_URL as string | undefined) ?? "http://localhost:5001";
+let API_BASE = (import.meta.env.VITE_ML_API_URL as string | undefined) ?? "http://localhost:5001";
+if (API_BASE.endsWith('/')) {
+  API_BASE = API_BASE.slice(0, -1);
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

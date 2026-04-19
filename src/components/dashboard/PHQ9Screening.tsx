@@ -50,7 +50,10 @@ export default function PHQ9Screening({ userData }: { userData: any }) {
     const score = answers.reduce((a, b) => a + b, 0);
 
     try {
-      const mlApiUrl = import.meta.env.VITE_ML_API_URL ?? "http://localhost:5001";
+      let mlApiUrl = import.meta.env.VITE_ML_API_URL ?? "http://localhost:5001";
+      if (mlApiUrl.endsWith('/')) {
+        mlApiUrl = mlApiUrl.slice(0, -1);
+      }
       const response = await fetch(`${mlApiUrl}/phq9-evaluate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
