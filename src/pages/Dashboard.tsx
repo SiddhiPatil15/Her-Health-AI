@@ -187,65 +187,38 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="flex h-screen bg-[#FDFCFD] overflow-hidden">
-      {/* Sidebar */}
-      <aside className="w-16 lg:w-24 bg-white border-r border-[#F3F4F6] flex flex-col items-center py-6 z-50">
-        <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full gradient-primary flex items-center justify-center text-white font-bold mb-8 shadow-lg cursor-pointer transition-transform hover:scale-110 shrink-0" onClick={() => setActiveTab("home")}>
+    <div className="flex h-screen bg-[#FDFCFD] overflow-hidden flex-col md:flex-row pb-16 md:pb-0">
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex w-24 bg-white border-r border-[#F3F4F6] flex-col items-center py-6 z-50">
+        <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center text-white font-bold mb-8 shadow-lg cursor-pointer transition-transform hover:scale-110 shrink-0" onClick={() => setActiveTab("home")}>
           H
         </div>
-        <nav className="flex-1 flex flex-col gap-3 lg:gap-5 overflow-y-auto no-scrollbar w-full items-center pb-4">
-          <SidebarIcon 
-            icon={<Home size={22} color={activeTab === "home" ? "#FF758C" : "#9CA3AF"} />} 
-            active={activeTab === "home"} 
-            onClick={() => setActiveTab("home")}
-          />
-          <SidebarIcon 
-            icon={<Activity size={22} color={activeTab === "activity" ? "#FF758C" : "#9CA3AF"} />} 
-            active={activeTab === "activity"} 
-            onClick={() => setActiveTab("activity")}
-          />
-          <SidebarIcon 
-            icon={<Heart size={22} color={activeTab === "health" ? "#FF758C" : "#9CA3AF"} />} 
-            active={activeTab === "health"} 
-            onClick={() => setActiveTab("health")}
-          />
-          <SidebarIcon 
-            icon={<BarChart2 size={22} color={activeTab === "stats" ? "#FF758C" : "#9CA3AF"} />} 
-            active={activeTab === "stats"} 
-            onClick={() => setActiveTab("stats")}
-          />
-          <SidebarIcon 
-            icon={<Clock size={22} color={activeTab === "clock" ? "#FF758C" : "#9CA3AF"} />} 
-            active={activeTab === "clock"} 
-            onClick={() => setActiveTab("clock")}
-          />
-          <SidebarIcon 
-            icon={<MessageCircle size={22} color={activeTab === "messages" ? "#FF758C" : "#9CA3AF"} />} 
-            active={activeTab === "messages"} 
-            onClick={() => setActiveTab("messages")}
-          />
-          <SidebarIcon 
-            icon={<Brain size={22} color="#9CA3AF" />} 
-            active={false} 
-            onClick={() => window.location.href = '/chat'}
-          />
-          <SidebarIcon 
-            icon={<Bookmark size={22} color={activeTab === "saved" ? "#FF758C" : "#9CA3AF"} />} 
-            active={activeTab === "saved"} 
-            onClick={() => setActiveTab("saved")}
-          />
-          <SidebarIcon 
-            icon={<Settings size={22} color={activeTab === "settings" ? "#FF758C" : "#9CA3AF"} />} 
-            active={activeTab === "settings"} 
-            onClick={() => setActiveTab("settings")}
-          />
+        <nav className="flex-1 flex flex-col gap-5 overflow-y-auto no-scrollbar w-full items-center pb-4">
+          <SidebarIcon icon={<Home size={22} color={activeTab === "home" ? "#FF758C" : "#9CA3AF"} />} active={activeTab === "home"} onClick={() => setActiveTab("home")} />
+          <SidebarIcon icon={<Activity size={22} color={activeTab === "activity" ? "#FF758C" : "#9CA3AF"} />} active={activeTab === "activity"} onClick={() => setActiveTab("activity")} />
+          <SidebarIcon icon={<Heart size={22} color={activeTab === "health" ? "#FF758C" : "#9CA3AF"} />} active={activeTab === "health"} onClick={() => setActiveTab("health")} />
+          <SidebarIcon icon={<BarChart2 size={22} color={activeTab === "stats" ? "#FF758C" : "#9CA3AF"} />} active={activeTab === "stats"} onClick={() => setActiveTab("stats")} />
+          <SidebarIcon icon={<Clock size={22} color={activeTab === "clock" ? "#FF758C" : "#9CA3AF"} />} active={activeTab === "clock"} onClick={() => setActiveTab("clock")} />
+          <SidebarIcon icon={<MessageCircle size={22} color={activeTab === "messages" ? "#FF758C" : "#9CA3AF"} />} active={activeTab === "messages"} onClick={() => setActiveTab("messages")} />
+          <SidebarIcon icon={<Brain size={22} color="#9CA3AF" />} active={false} onClick={() => window.location.href = '#/chat'} />
+          <SidebarIcon icon={<Bookmark size={22} color={activeTab === "saved" ? "#FF758C" : "#9CA3AF"} />} active={activeTab === "saved"} onClick={() => setActiveTab("saved")} />
+          <SidebarIcon icon={<Settings size={22} color={activeTab === "settings" ? "#FF758C" : "#9CA3AF"} />} active={activeTab === "settings"} onClick={() => setActiveTab("settings")} />
         </nav>
       </aside>
+
+      {/* Mobile Bottom Nav */}
+      <nav className="md:hidden fixed bottom-0 left-0 w-full h-[68px] bg-white border-t border-[#F3F4F6] flex items-center justify-between px-6 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.08)] overflow-x-auto no-scrollbar gap-6">
+          <SidebarIcon icon={<Home size={22} color={activeTab === "home" ? "#FF758C" : "#9CA3AF"} />} active={activeTab === "home"} onClick={() => setActiveTab("home")} />
+          <SidebarIcon icon={<Activity size={22} color={activeTab === "activity" ? "#FF758C" : "#9CA3AF"} />} active={activeTab === "activity"} onClick={() => setActiveTab("activity")} />
+          <SidebarIcon icon={<Brain size={22} color="#9CA3AF" />} active={false} onClick={() => window.location.href = '#/chat'} />
+          <SidebarIcon icon={<Bookmark size={22} color={activeTab === "saved" ? "#FF758C" : "#9CA3AF"} />} active={activeTab === "saved"} onClick={() => setActiveTab("saved")} />
+          <SidebarIcon icon={<Settings size={22} color={activeTab === "settings" ? "#FF758C" : "#9CA3AF"} />} active={activeTab === "settings"} onClick={() => setActiveTab("settings")} />
+      </nav>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-y-auto w-full overflow-x-hidden">
         {/* Top Header */}
-        <header className="h-20 flex items-center justify-between px-4 lg:px-8 bg-white/80 backdrop-blur-md border-b border-[#F3F4F6] sticky top-0 z-40">
+        <header className="h-20 shrink-0 flex items-center justify-between px-4 lg:px-8 bg-white/80 backdrop-blur-md border-b border-[#F3F4F6] sticky top-0 z-40">
           <button 
             onClick={() => setActiveTab('clock')}
             className="px-4 md:px-6 py-2 bg-[#FF758C] text-white rounded-full font-semibold text-[13px] md:text-[14px] hover:shadow-lg hover:shadow-rose-100 transition-all active:scale-95 whitespace-nowrap"

@@ -89,7 +89,7 @@
 }
 
 /* Specific overrides for Navbar and Sidebar */
-.dark header, .dark aside {
+.dark header, .dark aside, .dark nav {
   background-color: #1e293b !important; /* Slightly lighter slate for navbars */
   border-color: #334155 !important;
 }
