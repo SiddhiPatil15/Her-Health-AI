@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../dist', static_url_path='/')
 CORS(app)
 
 logging.basicConfig(level=logging.INFO)
@@ -113,10 +113,6 @@ def generate_datasets_and_train():
     logger.info("Models trained and datasets saved successfully!")
 
 generate_datasets_and_train()
-
-@app.route('/', methods=['GET'])
-def index():
-    return jsonify({"message": "HerHealth ML API Backend is running! Access the React frontend to use the application."})
 
 @app.route('/health', methods=['GET'])
 def health():
@@ -254,6 +250,16 @@ def chat():
     except Exception as e:
         logger.error(str(e))
         return jsonify({"error": str(e)}), 400
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path != "" and os.path.exists(app.static_folder + '/' + path):
+        return app.send_static_file(path)
+    else:
+        if os.path.exists(app.static_folder + '/index.html'):
+            return app.send_static_file('index.html')
+        return jsonify({"message": "API is running, but frontend dist/ folder not found. Please build the frontend."})
 
 if __name__ == '__main__':
     app.run(port=5001, debug=True)
