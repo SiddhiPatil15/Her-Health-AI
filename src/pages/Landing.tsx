@@ -58,8 +58,8 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Problem */}
-      <section className="bg-card py-16 md:py-20">
+      {/* Problem / About */}
+      <section id="about" className="bg-card py-16 md:py-20">
         <div className="max-w-[1280px] mx-auto px-6 md:px-8">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-10 md:mb-12">
             <motion.h2 variants={fadeUp} custom={0} className="text-[28px] md:text-h1 text-foreground mb-3">Why This Matters</motion.h2>
@@ -147,8 +147,8 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-16 md:py-20 max-w-[1280px] mx-auto px-6 md:px-8">
+      {/* CTA / Contact */}
+      <section id="contact" className="py-16 md:py-20 max-w-[1280px] mx-auto px-6 md:px-8">
         <motion.div
           initial="hidden" whileInView="visible" viewport={{ once: true }}
           className="gradient-primary rounded-3xl p-10 md:p-16 text-center"
@@ -206,7 +206,18 @@ const Landing = () => {
           </div>
           <div className="flex flex-wrap justify-center gap-6 md:gap-8">
             {["About", "Privacy", "Contact", "Team"].map(link => (
-              <span key={link} onClick={() => { if(link==='Team') document.getElementById('team')?.scrollIntoView({behavior:'smooth'}); else window.scrollTo({top:0, behavior:'smooth'}) }} className="cursor-pointer text-body text-muted-foreground hover:text-foreground transition-colors">{link}</span>
+              <span 
+                key={link} 
+                onClick={() => {
+                  const id = link.toLowerCase();
+                  const el = document.getElementById(id);
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  else window.scrollTo({ top: 0, behavior: 'smooth' });
+                }} 
+                className="cursor-pointer text-body text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {link}
+              </span>
             ))}
           </div>
           <p className="text-caption text-muted-foreground text-center">© 2026 HerHealth. All rights reserved.</p>

@@ -50,11 +50,11 @@ USER HEALTH PROFILE:
 - AI Risk Level: ${risk} (Score: ${riskScore}/100)
 
 CRITICAL INSTRUCTIONS:
-1. YOU MUST ANSWER THE USER'S QUESTION DIRECTLY AND SPECIFICALLY. Do not just give generic advice. If they ask a specific question, answer that exact question.
-2. Personalize your answer based heavily on the USER HEALTH PROFILE provided above.
+1. YOU MUST ANSWER THE USER'S QUESTION DIRECTLY AND SPECIFICALLY. Do not give vague or generic advice.
+2. USE THE DATA: Always incorporate the user's BMI, stage, or risk level in your explanation.
 3. Be highly empathetic but medically rigorous.
 4. Keep responses concise (2-3 short paragraphs max).
-5. Do not use excessive markdown.`;
+5. If the question is not about women's metabolic health, politely redirect them back to their health profile.`;
 }
 
 const AIChat = () => {
@@ -171,9 +171,9 @@ const AIChat = () => {
   return (
     <div className="flex min-h-screen bg-background">
       <DashboardSidebar />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         <DashboardHeader />
-        <main className="flex-1 flex flex-col p-8 max-w-4xl mx-auto w-full">
+        <main className="flex-1 flex flex-col p-4 md:p-8 max-w-4xl mx-auto w-full overflow-hidden">
           <div className="flex items-center gap-2 mb-6">
             <div className="w-10 h-10 rounded-xl gradient-purple flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-secondary-foreground" />
