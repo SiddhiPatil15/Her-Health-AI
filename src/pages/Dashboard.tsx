@@ -551,7 +551,7 @@ const DashboardHome = ({ userData, firstName, setActiveTab, scores }: any) => (
       <FAQSection />
 
       {/* AI Tip Box — dynamic and rotating every 30 seconds */}
-      <AITipBox userData={userData} />
+      <AITipBox userData={userData} setActiveTab={setActiveTab} />
 
       {/* AI Chat Box */}
       <section className="bg-white p-6 rounded-[40px] border border-[#F3F4F6] shadow-sm hover:shadow-md transition-shadow">
@@ -1092,7 +1092,7 @@ const FAQSection = () => {
   );
 };
 
-const AITipBox = ({ userData }: any) => {
+const AITipBox = ({ userData, setActiveTab }: any) => {
   const [tipIndex, setTipIndex] = useState(0);
 
   const tips = [
@@ -1139,15 +1139,15 @@ const AITipBox = ({ userData }: any) => {
              <span className="text-[12px] font-bold text-primary uppercase tracking-wider">AI Quick Tip</span>
            </div>
            <button 
-            onClick={() => setActiveTab("calendar")}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors relative ${activeTab === 'calendar' ? 'bg-rose-50 text-primary' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
+            onClick={() => setActiveTab && setActiveTab("calendar")}
+            className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors relative bg-muted text-muted-foreground hover:text-foreground"
             title="Health Calendar"
           >
             <Calendar size={20} />
           </button>
 
           <button 
-            onClick={() => setShowNotif(!showNotif)}
+            onClick={handleSaveTip}
             className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors relative"
             title="Save Tip"
            >

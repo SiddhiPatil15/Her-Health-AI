@@ -112,13 +112,15 @@ export default function RiskPredictionCard({ userData }: Props) {
   const runPrediction = async (inp: PredictionInput) => {
     setLoading(true);
     setError(null);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12_000);
     try {
       const API_BASE = (import.meta.env.VITE_ML_API_URL as string | undefined) ?? "http://localhost:5001";
       const res = await fetch(`${API_BASE}/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(inp),
-        signal: AbortSignal.timeout(12_000),
+        signal: controller.signal,
       });
 
       if (!res.ok) throw new Error(`API error ${res.status}`);
@@ -138,8 +140,10 @@ export default function RiskPredictionCard({ userData }: Props) {
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Prediction failed";
-      setError(msg);
+      // AbortError just means timeout — show friendly message
+      setError(err instanceof Error && err.name === "AbortError" ? "Request timed out" : msg);
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
       setHasRun(true);
     }
