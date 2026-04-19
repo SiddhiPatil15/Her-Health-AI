@@ -132,17 +132,26 @@ const AIChat = () => {
         } else {
           try {
             const genAI = new GoogleGenerativeAI(geminiKey);
-            // gemini-1.5-flash is the most reliable and fastest
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const modelsToTry = ["gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+            let model;
             const systemPrompt = buildSystemPrompt(userData ?? {});
             
-            const result = await model.generateContent({
-              contents: [{ role: "user", parts: [{ text: `${systemPrompt}\n\nUser Question: ${text}` }] }],
-              generationConfig: {
-                maxOutputTokens: 500,
-                temperature: 0.7,
-              },
-            });
+            for (const m of modelsToTry) {
+              try {
+                model = genAI.getGenerativeModel({ model: m });
+                const result = await model.generateContent({
+                  contents: [{ role: "user", parts: [{ text: `${systemPrompt}\n\nUser Question: ${text}` }] }],
+                  generationConfig: { maxOutputTokens: 500, temperature: 0.7 },
+                });
+                const candidate = result.response.candidates?.[0];
+                if (candidate?.content?.parts?.[0]?.text) {
+                  responseText = candidate.content.parts[0].text;
+                  break;
+                }
+              } catch {
+                continue;
+              }
+            }
             
             const candidate = result.response.candidates?.[0];
             if (candidate?.content?.parts?.[0]?.text) {

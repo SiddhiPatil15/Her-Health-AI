@@ -221,38 +221,39 @@ def chat():
         risk = user_data.get('latestRisk', {}).get('riskLevel', 'not assessed')
         
         # Load API Key
-        # Configure this key or default to a safe message if missing
-        api_key = os.environ.get("GEMINI_API_KEY") or "AIzaSyCzs099gzT3rwBBIbrRdA6coc9C2ucyvPY"
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+             # Try local .env if available
+             try:
+                 from dotenv import load_dotenv
+                 load_dotenv()
+                 api_key = os.getenv("GEMINI_API_KEY")
+             except:
+                 pass
+
         if not api_key:
             return jsonify({
-                "response": "Hello! I am your AI doctor. (Note: My advanced reasoning brain is currently disconnected since my GEMINI_API_KEY environment variable is not set on the backend. Please add the Gemini API key to the backend, or continue talking to me for standard advice.)"
+                "response": "Hello! I am your AI doctor. (Note: My reasoning brain is currently disconnected as GEMINI_API_KEY is not set on the server.)"
             })
             
         genai.configure(api_key=api_key)
         
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        models_to_try = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
+        response_text = ""
         
-        prompt = f"""
-        You are HerHealth's highly specialized AI Doctor. You provide expert, empathetic, and medically accurate advice for women's health, specifically focusing on Menopause, Pregnancy (Gestational), Metabolic Health, Obesity, and Diabetes.
-
-        Here is the user's current health profile:
-        - Health Stage: {stage}
-        - Age: {age}
-        - Weight: {weight} kg
-        - Diet: {diet}
-        - Medical History: {history}
-        - Current App Assessed Metabolic Risk Level: {risk}
-
-        The user asks: "{message}"
-
-        Please provide a conversational, highly personalized, and helpful response. Be professional but empathetic. Since this app tracks datasets related to Gestational Diabetes and Obesity/Menopause trends, try to ground your advice in those concepts implicitly if relevant. Limit your response to 1-2 concise paragraphs. Do not use overly complex Markdown, just standard text.
-        """
+        prompt = f"You are HerHealth AI. Profile: {stage}, Age {age}, Risk {risk}. Question: {message}. ANSWER DIRECTLY."
         
-        response = model.generate_content(prompt)
-        
-        return jsonify({
-            "response": response.text
-        })
+        for model_name in models_to_try:
+            try:
+                model = genai.GenerativeModel(model_name)
+                response = model.generate_content(prompt)
+                if response.text:
+                    response_text = response.text
+                    break
+            except:
+                continue
+
+        return jsonify({"response": response_text or "AI service unavailable"})
         
     except Exception as e:
         logger.error(str(e))
