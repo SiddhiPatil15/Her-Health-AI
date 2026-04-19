@@ -266,31 +266,35 @@ function generateRuleBasedResponse(text: string, userData: Record<string, unknow
     : null;
   const riskLevel = (userData?.latestRisk as any)?.riskLevel;
 
+  // Specific detection for questions about "what should I do" or "how to improve"
+  if (q.includes("what should i do") || q.includes("how to improve") || q.includes("recommendation") || q.includes("advice")) {
+    if (stage === "pregnancy") {
+      return `For your pregnancy stage, the most specific thing you can do is maintain a consistent low-glycemic diet to prevent gestational diabetes. Aim for 30 minutes of light walking daily and ensure you're tracking your blood glucose levels if your risk is ${riskLevel || "not yet assessed"}. This directly helps regulate insulin during metabolic shifts.`;
+    }
+    if (stage === "menopause") {
+      return `During menopause, your insulin sensitivity decreases naturally. I specifically recommend adding 2 days of strength training to your week to build muscle mass, which helps process glucose more efficiently. Also, focus on high-fiber foods to manage weight changes associated with falling estrogen levels.`;
+    }
+  }
+
   if (q.includes("diabetes") || q.includes("sugar") || q.includes("glucose")) {
-    return `Based on your health profile${riskLevel ? ` (current risk: ${riskLevel})` : ""}, here's what you should know about diabetes:\n\nType 2 diabetes risk increases with high BMI, sedentary lifestyle, poor sleep, and family history. ${bmiVal ? `Your BMI of ${bmiVal} is a key factor in our model.` : ""} Reducing refined sugar, increasing fiber intake, and 150+ minutes of moderate activity per week can reduce risk by up to 30%.\n\n${stage === "pregnancy" ? "Since you're in your pregnancy stage, gestational diabetes is particularly important to monitor. Regular glucose screening and maintaining healthy weight gain are critical." : stage === "menopause" ? "During menopause, falling estrogen levels increase insulin resistance — making diet and activity even more important for diabetes prevention." : ""}`;
+    return `Looking at your profile, your ${riskLevel || "current"} risk for diabetes is a key focus. To specifically target this, I recommend reducing refined sugars and processed carbohydrates immediately. ${bmiVal ? `With a BMI of ${bmiVal}, losing even 3-5% of body weight can improve your insulin sensitivity by up to 25%.` : ""} Would you like a specific meal plan suggestion for today?`;
   }
 
   if (q.includes("obesity") || q.includes("weight") || q.includes("bmi")) {
-    return `${bmiVal ? `Your current BMI of ${bmiVal} has been factored into your risk score.` : "BMI is one of the most important factors in our obesity and diabetes prediction models."}\n\nObesity increases risk of Type 2 diabetes, heart disease, and metabolic syndrome. Our Obesity Prediction model analyzes your BMI, activity level, diet, and sleep patterns together to assess your risk.\n\nKey strategies: increase daily steps to 10,000+, choose whole foods over processed ones, and ensure 7-8 hours of quality sleep nightly.`;
+    return `${bmiVal ? `Your BMI of ${bmiVal} places you in a specific risk category for metabolic syndrome.` : "Weight management is critical for your metabolic health."} The most effective direct action is increasing your daily step count to 10,000 and replacing sugary drinks with water. This has a 1:1 impact on reducing visceral fat, which is the primary driver of diabetes risk in our models.`;
   }
 
   if (q.includes("step") || q.includes("walk") || q.includes("exercise") || q.includes("activity")) {
-    return `Walking is one of the most effective ways to reduce diabetes and obesity risk! Health recommendations suggest:\n\n• 7,000–10,000 steps/day for metabolic health\n• 150 min/week of moderate activity reduces Type 2 diabetes risk by 30%\n• Just 30 min of brisk walking daily can significantly improve insulin sensitivity\n\nUse the HerHealth Tracker's built-in pedometer to count steps automatically. Your steps are saved to your profile and tracked in the Monthly Wrap!`;
+    return `To answer your question about activity: yes, walking is vital. Specifically, aim for 7,000+ steps. For someone in the ${stage} stage, this helps stabilize blood sugar spikes after meals. Try to walk for 10-15 minutes after every large meal for the best metabolic results.`;
   }
 
   if (q.includes("sleep")) {
-    return `Sleep quality is strongly linked to metabolic health. Studies show that less than 6 hours of sleep increases obesity risk by 34% and raises cortisol levels, which disrupts insulin regulation.\n\nAim for 7–9 hours of consistent sleep. ${userData?.sleepHours ? `Your logged sleep of ${userData.sleepHours} hrs/night factors into your risk score.` : ""} Try keeping a consistent sleep schedule and limiting screens 1 hour before bed for better sleep quality.`;
+    return `Specific sleep advice for you: aim for 7.5 hours. Poor sleep directly spikes your cortisol, which makes your body store fat and resist insulin. If you're in ${stage}, hormone changes might be disrupting sleep—try a cool room and no blue light 1 hour before bed to protect your metabolic health.`;
   }
 
-  if (q.includes("menopause")) {
-    return `During menopause, declining estrogen levels cause major metabolic shifts including increased abdominal fat, reduced insulin sensitivity, and higher cardiovascular risk.\n\nHerHealth's risk models are specifically calibrated for menopausal women. Key recommendations: prioritize strength training (builds insulin-sensitive muscle), follow a low-glycemic diet, monitor blood pressure, and log metrics daily to track changes over time.`;
-  }
+  return `I want to make sure I answer your specific question accurately. Based on your ${stage} profile and ${riskLevel || "current"} risk assessment, the most important thing is to focus on ${q.includes('diet') ? 'low-glycemic nutrition' : q.includes('exercise') ? 'post-meal walking' : 'consistent health tracking'}. 
 
-  if (q.includes("pregnancy") || q.includes("gestational")) {
-    return `Gestational diabetes affects approximately 10% of pregnancies and significantly increases future Type 2 diabetes risk for both mother and child.\n\nOur Gestational Diabetes prediction model considers your BMI, age, family history, and activity level. Risk factors include BMI >27, age >30, and family history of diabetes.\n\nManagement strategies: low-GI diet, 30 min of light activity daily, regular glucose monitoring, and consistent prenatal care.`;
-  }
-
-  return `Great question! Based on your health profile${stage !== "general" ? ` (${stage} stage)` : ""}${riskLevel ? ` with a ${riskLevel} risk assessment` : ""}, I recommend focusing on these core metabolic health pillars:\n\n1. **Activity**: 7,000+ steps/day, 150 min/week moderate exercise\n2. **Diet**: Low-glycemic foods, reduce sugar and processed carbs\n3. **Sleep**: 7–8 hours consistently\n4. **Monitoring**: Regular weight, blood pressure, and glucose tracking\n\nWould you like specific advice on any of these areas?`;
+Could you tell me more about your specific concern regarding ${text.split(' ').slice(-3).join(' ')} so I can give you a more targeted answer?`;
 }
 
 export default AIChat;
