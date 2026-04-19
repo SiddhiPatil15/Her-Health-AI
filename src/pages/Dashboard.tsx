@@ -25,7 +25,8 @@ import {
   ChevronRight,
   ChevronDown,
   Bookmark,
-  CalendarPlus
+  CalendarPlus,
+  ArrowRight
 } from "lucide-react";
 import { 
   LineChart, 
