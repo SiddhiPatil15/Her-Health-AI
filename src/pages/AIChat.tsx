@@ -143,21 +143,18 @@ const AIChat = () => {
                   contents: [{ role: "user", parts: [{ text: `${systemPrompt}\n\nUser Question: ${text}` }] }],
                   generationConfig: { maxOutputTokens: 500, temperature: 0.7 },
                 });
-                const candidate = result.response.candidates?.[0];
-                if (candidate?.content?.parts?.[0]?.text) {
-                  responseText = candidate.content.parts[0].text;
+                
+                // Extract text safely
+                const textResult = result.response.text();
+                if (textResult) {
+                  responseText = textResult;
+                  console.log(`Success with model ${m}`);
                   break;
                 }
-              } catch {
+              } catch (e) {
+                console.warn(`Model ${m} failed, trying next...`);
                 continue;
               }
-            }
-            
-            const candidate = result.response.candidates?.[0];
-            if (candidate?.content?.parts?.[0]?.text) {
-              responseText = candidate.content.parts[0].text;
-            } else {
-              responseText = result.response.text();
             }
           } catch (geminiErr: any) {
             console.error("Gemini API Error:", geminiErr);
