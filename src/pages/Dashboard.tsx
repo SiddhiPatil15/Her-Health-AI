@@ -41,6 +41,7 @@ import {
 import { toast } from "sonner";
 import RiskPredictionCard from "@/components/dashboard/RiskPredictionCard";
 import { MoodTracker } from "@/components/dashboard/MoodTracker";
+import PHQ9Screening from "@/components/dashboard/PHQ9Screening";
 
 const progressData = [
   { name: 'Week 1', value: 55 },
@@ -181,6 +182,8 @@ const Dashboard = () => {
         return <HealthMetricsView setActiveTab={setActiveTab} />;
       case "stats":
         return <AnalyticsTrendsView setActiveTab={setActiveTab} />;
+      case "screening":
+        return <PHQ9Screening userData={userData} />;
       case "clock":
         return <HistoryScheduleView setActiveTab={setActiveTab} />;
       case "messages":
@@ -389,6 +392,27 @@ const DashboardHome = ({ userData, firstName, setActiveTab, scores }: any) => (
       </div>
 
 
+
+      {/* Mental Health Screening Banner */}
+      {(userData?.broadHealthStage === "pregnancy" || userData?.broadHealthStage === "postpartum" || true) && (
+        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-3xl p-6 border border-indigo-100 flex flex-col md:flex-row items-center justify-between gap-6 hover:shadow-md transition-all">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center shrink-0">
+              <Brain className="w-7 h-7 text-indigo-500" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Postpartum Mental Health Screening</h3>
+              <p className="text-sm text-gray-600 mt-1 max-w-xl">Take our short, clinically-validated PHQ-9 assessment to check in on your mental well-being and get personalized AI support.</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setActiveTab("screening")}
+            className="shrink-0 bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-3 rounded-full font-semibold transition-all shadow-sm shadow-indigo-200 flex items-center gap-2 w-full md:w-auto justify-center"
+          >
+            Start Screening <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Middle Section Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

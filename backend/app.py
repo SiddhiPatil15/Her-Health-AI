@@ -251,6 +251,57 @@ def chat():
         logger.error(str(e))
         return jsonify({"error": str(e)}), 400
 
+@app.route('/phq9-evaluate', methods=['POST'])
+def phq9_evaluate():
+    data = request.json
+    try:
+        score = int(data.get('score', 0))
+        stage = data.get('stage', 'postpartum')
+        
+        if score <= 4:
+            severity = "Normal (minimal or no depression)"
+        elif score <= 9:
+            severity = "Mild to moderate concern (Mild depression)"
+        elif score <= 14:
+            severity = "Moderate concern (Moderate depression)"
+        elif score <= 19:
+            severity = "High concern (Moderately severe depression)"
+        else:
+            severity = "High concern (Severe depression)"
+
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            return jsonify({
+                "response": f"Your score is {score} ({severity}). Please ensure you take care of yourself, and if you're feeling overwhelmed, don't hesitate to reach out to a healthcare professional.",
+                "severity": severity
+            })
+            
+        genai.configure(api_key=api_key)
+        prompt = f"You are a highly empathetic AI maternal health companion. The user has just completed a PHQ-9 Postpartum Depression Screening.\nTheir total score is {score}/27, which indicates: {severity}.\nHealth stage: {stage}.\n\nWrite a very empathetic, supportive, and realistic response (2-3 short paragraphs max).\n- If the score is normal (0-4), validate their well-being and encourage continued self-care.\n- If mild to moderate (5-14), offer gentle support, suggest self-care, and mention talking to a doctor or support system.\n- If high concern (15+), be extremely compassionate but clear about the importance of seeking professional help immediately.\n\nDo NOT sound robotic or generic. Use a warm, caring tone."
+
+        models_to_try = ['gemini-1.5-flash', 'gemini-1.5-pro']
+        response_text = ""
+        for model_name in models_to_try:
+            try:
+                model = genai.GenerativeModel(model_name)
+                response = model.generate_content(prompt)
+                if response.text:
+                    response_text = response.text
+                    break
+            except:
+                continue
+
+        if not response_text:
+            response_text = f"Your score is {score} ({severity}). Please ensure you take care of yourself, and if you're feeling overwhelmed, don't hesitate to reach out to a healthcare professional."
+
+        return jsonify({
+            "response": response_text,
+            "severity": severity
+        })
+    except Exception as e:
+        logger.error(str(e))
+        return jsonify({"error": str(e)}), 400
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
