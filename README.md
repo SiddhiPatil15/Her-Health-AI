@@ -1,6 +1,4 @@
-<div align="center">
-  <img src="./public/favicon.ico" alt="Logo" width="80" height="80">
-  <h1 align="center">HerHealth AI 🌸</h1>
+<h1 align="center">HerHealth AI 🌸</h1>
   <p align="center">
     <strong>AI-Powered Personalized Health Companion for Women</strong>
     <br />
