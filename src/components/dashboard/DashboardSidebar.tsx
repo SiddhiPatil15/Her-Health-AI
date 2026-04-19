@@ -1,10 +1,11 @@
-import { Home, Activity, Sparkles, FileText, MessageCircle, Settings, Clock, Bookmark } from "lucide-react";
+import { Home, Activity, Sparkles, FileText, MessageCircle, Settings, Clock, Bookmark, Calendar as CalendarIcon } from "lucide-react";
 import { useLocation, Link } from "react-router-dom";
 
 const navItems = [
   { icon: Home, path: "/dashboard", label: "Home" },
   { icon: Activity, path: "/dashboard?tab=activity", label: "Health Tracker" },
   { icon: Sparkles, path: "/chat", label: "AI Insights" },
+  { icon: CalendarIcon, path: "/dashboard?tab=calendar", label: "Health Calendar" },
   { icon: Clock, path: "/monthly-wrap", label: "Monthly Wrap" },
   { icon: Bookmark, path: "/dashboard?tab=saved", label: "Saved" },
   { icon: Settings, path: "/dashboard?tab=settings", label: "Settings" },

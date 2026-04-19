@@ -13,10 +13,27 @@ import {
   orderBy,
   query,
   setDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface MoodLog {
+  date: string; // "YYYY-MM-DD"
+  mood: string;
+  note?: string;
+  createdAt: string;
+}
+
+export interface SavedArticle {
+  id: string;
+  title: string;
+  type: string;
+  link: string;
+  source: string;
+  savedAt: string;
+}
 
 export interface DailyHealthLog {
   date: string;           // "YYYY-MM-DD"
@@ -97,6 +114,54 @@ export async function getRiskHistory(
   const q = query(ref, orderBy("createdAt", "desc"), limit(maxRecords));
   const snap = await getDocs(q);
   return snap.docs.map((d) => d.data() as RiskRecord);
+}
+
+/** Save a mood entry for the user. */
+export async function saveMoodLog(
+  userId: string,
+  mood: string,
+  note: string = ""
+): Promise<void> {
+  const date = new Date().toISOString().split('T')[0];
+  const ref = doc(db, "users", userId, "moodLogs", date);
+  await setDoc(ref, {
+    date,
+    mood,
+    note,
+    createdAt: new Date().toISOString()
+  });
+}
+
+/** Fetch all mood logs. */
+export async function getMoodLogs(userId: string): Promise<MoodLog[]> {
+  const ref = collection(db, "users", userId, "moodLogs");
+  const snap = await getDocs(ref);
+  return snap.docs.map(d => d.data() as MoodLog);
+}
+
+/** Save an article to the user's favorites. */
+export async function saveArticle(
+  userId: string,
+  article: Omit<SavedArticle, "id" | "savedAt">
+): Promise<string> {
+  const ref = collection(db, "users", userId, "savedArticles");
+  const snap = await addDoc(ref, {
+    ...article,
+    savedAt: new Date().toISOString()
+  });
+  return snap.id;
+}
+
+/** Fetch all saved articles. */
+export async function getSavedArticles(userId: string): Promise<SavedArticle[]> {
+  const ref = collection(db, "users", userId, "savedArticles");
+  const snap = await getDocs(ref);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as SavedArticle));
+}
+
+/** Remove a saved article. */
+export async function removeArticle(userId: string, articleId: string): Promise<void> {
+  await deleteDoc(doc(db, "users", userId, "savedArticles", articleId));
 }
 
 // ─── User metric summaries ────────────────────────────────────────────────────

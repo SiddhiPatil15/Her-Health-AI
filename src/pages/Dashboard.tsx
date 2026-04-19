@@ -40,6 +40,7 @@ import {
 } from 'recharts';
 import { toast } from "sonner";
 import RiskPredictionCard from "@/components/dashboard/RiskPredictionCard";
+import { MoodTracker } from "@/components/dashboard/MoodTracker";
 
 const progressData = [
   { name: 'Week 1', value: 55 },
@@ -166,6 +167,13 @@ const Dashboard = () => {
             setActiveTab={setActiveTab}
             scores={scores}
           />
+        );
+      case "calendar":
+        return (
+          <div className="p-8 max-w-6xl mx-auto w-full">
+            <ViewHeader title="Health Calendar & Mood" icon={<Calendar size={32} className="text-[#FF758C]" />} setActiveTab={setActiveTab} />
+            <MoodTracker />
+          </div>
         );
       case "activity":
         return <ActivityTrackerView setActiveTab={setActiveTab} />;
@@ -373,6 +381,45 @@ const DashboardHome = ({ userData, firstName, setActiveTab, scores }: any) => (
         />
       </div>
 
+      {/* Health Resources */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-h3 font-bold text-gray-800">Personalized Resources</h3>
+          <span className="text-primary font-bold text-sm cursor-pointer hover:underline">View All</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[
+            { title: "Gestational Diabetes Prevention", type: "Article", source: "Mayo Clinic", link: "https://www.mayoclinic.org/diseases-conditions/gestational-diabetes/symptoms-causes/syc-20355339" },
+            { title: "Metabolic Health in Menopause", type: "Guide", source: "Harvard Health", link: "https://www.health.harvard.edu/womens-health/menopause-and-metabolic-health" },
+          ].map((article, i) => (
+            <div key={i} className="p-4 bg-white rounded-3xl border border-[#F3F4F6] flex items-center justify-between group hover:shadow-md transition-all">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-500 font-bold">
+                  📄
+                </div>
+                <div>
+                  <p className="font-bold text-sm text-gray-800 line-clamp-1">{article.title}</p>
+                  <p className="text-[11px] text-gray-500">{article.source}</p>
+                </div>
+              </div>
+              <button 
+                onClick={async () => {
+                  const user = auth.currentUser;
+                  if (user) {
+                    const { saveArticle } = await import("../lib/healthService");
+                    await saveArticle(user.uid, article);
+                    toast.success("Saved to your resources!");
+                  }
+                }}
+                className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-rose-50 hover:text-primary transition-all"
+              >
+                <Bookmark className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Middle Section Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Health Rate Circle */}
@@ -571,23 +618,64 @@ const SettingsView = ({ setActiveTab, userData }: any) => {
 };
 
 const SavedView = ({ setActiveTab }: any) => {
-  const [savedItems, setSavedItems] = useState([
-    { title: "How to manage Gestational Diabetes", type: "Article", link: "https://www.mayoclinic.org/diseases-conditions/gestational-diabetes/symptoms-causes/syc-20355339", source: "Mayo Clinic" },
-    { title: "5 Yoga Poses for Menopause Relief", type: "Video", link: "https://www.youtube.com/watch?v=k-a2rE-A0Qo", source: "YouTube" },
-    { title: "Understanding Metabolic Syndrome", type: "Article", link: "https://www.nhlbi.nih.gov/health/metabolic-syndrome", source: "NIH" },
-    { title: "Best Foods for Pregnancy Nutrition", type: "Video", link: "https://www.youtube.com/watch?v=O1k5sQ3j8A4", source: "YouTube" }
-  ]);
+  const [savedItems, setSavedItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (user) {
+      import("../lib/healthService").then(({ getSavedArticles }) => {
+        getSavedArticles(user.uid).then(items => {
+          setSavedItems(items);
+          setLoading(false);
+        });
+      });
+    }
+  }, []);
+
+  const handleRemove = async (articleId: string) => {
+    const user = auth.currentUser;
+    if (user) {
+      const { removeArticle } = await import("../lib/healthService");
+      await removeArticle(user.uid, articleId);
+      setSavedItems(savedItems.filter(item => item.id !== articleId));
+      toast.success("Article removed.");
+    }
+  };
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-8 max-w-4xl mx-auto w-full space-y-6">
-      <ViewHeader title="Saved Items" icon={<Bookmark className="text-indigo-500" />} setActiveTab={setActiveTab} />
+      <div className="flex items-center justify-between">
+        <ViewHeader title="Saved Items" icon={<Bookmark className="text-indigo-500" />} setActiveTab={setActiveTab} />
+        <button 
+          onClick={() => {
+            const title = prompt("Enter title:");
+            const link = prompt("Enter URL:");
+            if (title && link) {
+              const user = auth.currentUser;
+              if (user) {
+                import("../lib/healthService").then(({ saveArticle }) => {
+                   saveArticle(user.uid, { title, link, type: "Manual", source: "User Upload" });
+                   toast.success("Content uploaded!");
+                   window.location.reload(); // Refresh to show new item
+                });
+              }
+            }
+          }}
+          className="bg-primary text-white px-6 py-2 rounded-2xl font-bold shadow-lg shadow-rose-100 hover:scale-105 transition-all"
+        >
+          + Upload Link
+        </button>
+      </div>
       <div className="bg-white p-8 rounded-[32px] shadow-sm border border-[#F3F4F6]">
-        {savedItems.length === 0 ? (
+        {loading ? (
+          <p className="text-center py-8">Loading favorites...</p>
+        ) : savedItems.length === 0 ? (
           <p className="text-gray-500 text-center py-8 font-bold">No saved items yet.</p>
         ) : (
           <div className="space-y-4">
-            {savedItems.map((item, idx) => (
-              <div key={idx} className="p-5 bg-indigo-50 rounded-2xl border border-indigo-100 flex justify-between items-center hover:shadow-md transition">
+            {savedItems.map((item) => (
+              <div key={item.id} className="p-5 bg-indigo-50 rounded-2xl border border-indigo-100 flex justify-between items-center hover:shadow-md transition">
                 <div className="flex items-center gap-4 cursor-pointer" onClick={() => window.open(item.link, '_blank')}>
                    <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-indigo-500 font-bold shrink-0 shadow-sm">
                      {item.type === "Video" ? "▶" : "📄"}
@@ -597,10 +685,7 @@ const SavedView = ({ setActiveTab }: any) => {
                      <p className="text-[13px] text-indigo-600 font-medium mt-1">{item.type} • {item.source}</p>
                    </div>
                 </div>
-                <button onClick={() => {
-                  setSavedItems(savedItems.filter((_, i) => i !== idx));
-                  toast.success("Item removed from saved list.");
-                }} className="text-rose-500 font-bold text-sm bg-white px-4 py-2 rounded-xl shadow-sm hover:bg-rose-50 transition">Remove</button>
+                <button onClick={() => handleRemove(item.id)} className="text-rose-500 font-bold text-sm bg-white px-4 py-2 rounded-xl shadow-sm hover:bg-rose-50 transition">Remove</button>
               </div>
             ))}
           </div>
@@ -1017,16 +1102,39 @@ const AITipBox = ({ userData }: any) => {
   useEffect(() => {
     const interval = setInterval(() => {
       setTipIndex((prev) => (prev + 1) % tips.length);
-    }, 5000);
+    }, 15000);
     return () => clearInterval(interval);
   }, [tips.length]);
+
+  const handleSaveTip = async () => {
+    const user = auth.currentUser;
+    if (user) {
+      const { saveArticle } = await import("../lib/healthService");
+      await saveArticle(user.uid, {
+        title: tips[tipIndex],
+        type: "AI Tip",
+        link: "#",
+        source: "HerHealth AI"
+      });
+      toast.success("Tip saved to your favorites!");
+    }
+  };
 
   return (
     <div className="p-8 rounded-[40px] bg-[#FFE4E8] relative overflow-hidden group cursor-default shadow-sm hover:shadow-md transition-all">
        <div className="relative z-10">
-         <div className="flex items-center gap-2 mb-3">
-           <Brain className="w-5 h-5 text-primary animate-pulse" />
-           <span className="text-[12px] font-bold text-primary uppercase tracking-wider">AI Quick Tip</span>
+         <div className="flex items-center justify-between mb-3">
+           <div className="flex items-center gap-2">
+             <Brain className="w-5 h-5 text-primary animate-pulse" />
+             <span className="text-[12px] font-bold text-primary uppercase tracking-wider">AI Quick Tip</span>
+           </div>
+           <button 
+             onClick={handleSaveTip}
+             className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center hover:bg-white transition-colors"
+             title="Save Tip"
+           >
+             <Bookmark className="w-4 h-4 text-primary" />
+           </button>
          </div>
          <AnimatePresence mode="wait">
            <motion.p
@@ -1035,7 +1143,7 @@ const AITipBox = ({ userData }: any) => {
              animate={{ opacity: 1, y: 0 }}
              exit={{ opacity: 0, y: -10 }}
              transition={{ duration: 0.5 }}
-             className="text-[15px] font-bold text-[#1F2937] leading-relaxed"
+             className="text-[15px] font-bold text-[#1F2937] leading-relaxed pr-8"
            >
              {tips[tipIndex]}
            </motion.p>
