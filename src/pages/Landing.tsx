@@ -22,8 +22,8 @@ const Landing = () => {
           <span className="text-h3 text-foreground font-semibold">HerHealth</span>
         </div>
         <div className="hidden lg:flex items-center gap-8">
-          <a href="#features" className="text-body text-muted-foreground hover:text-foreground transition-colors">Features</a>
-          <a href="#how" className="text-body text-muted-foreground hover:text-foreground transition-colors">How It Works</a>
+          <span onClick={() => document.getElementById('features')?.scrollIntoView({behavior:'smooth'})} className="cursor-pointer text-body text-muted-foreground hover:text-foreground transition-colors">Features</span>
+          <span onClick={() => document.getElementById('how')?.scrollIntoView({behavior:'smooth'})} className="cursor-pointer text-body text-muted-foreground hover:text-foreground transition-colors">How It Works</span>
           <Link to="/login" className="text-body text-muted-foreground hover:text-foreground transition-colors">Sign In</Link>
         </div>
         <div>
@@ -47,9 +47,9 @@ const Landing = () => {
               <Link to="/signup" className="px-7 py-3 gradient-primary text-primary-foreground rounded-xl text-body font-medium hover-lift flex items-center justify-center gap-2">
                 Start Health Journey <ArrowRight className="w-4 h-4" />
               </Link>
-              <a href="#features" className="px-7 py-3 bg-card border border-border text-foreground rounded-xl text-body font-medium hover-lift flex justify-center">
+              <span onClick={() => document.getElementById('features')?.scrollIntoView({behavior:'smooth'})} className="px-7 py-3 bg-card border border-border text-foreground rounded-xl text-body font-medium hover-lift flex justify-center cursor-pointer">
                 Learn More
-              </a>
+              </span>
             </motion.div>
           </motion.div>
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }}>
@@ -168,7 +168,7 @@ const Landing = () => {
       </section>
 
       {/* Team */}
-      <section className="bg-card py-16 md:py-20">
+      <section id="team" className="bg-card py-16 md:py-20">
         <div className="max-w-[1280px] mx-auto px-6 md:px-8">
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-10 md:mb-12">
             <motion.h2 variants={fadeUp} custom={0} className="text-[28px] md:text-h1 text-foreground mb-3">Meet the Team</motion.h2>
@@ -206,7 +206,7 @@ const Landing = () => {
           </div>
           <div className="flex flex-wrap justify-center gap-6 md:gap-8">
             {["About", "Privacy", "Contact", "Team"].map(link => (
-              <a key={link} href="#" className="text-body text-muted-foreground hover:text-foreground transition-colors">{link}</a>
+              <span key={link} onClick={() => { if(link==='Team') document.getElementById('team')?.scrollIntoView({behavior:'smooth'}); else window.scrollTo({top:0, behavior:'smooth'}) }} className="cursor-pointer text-body text-muted-foreground hover:text-foreground transition-colors">{link}</span>
             ))}
           </div>
           <p className="text-caption text-muted-foreground text-center">© 2026 HerHealth. All rights reserved.</p>

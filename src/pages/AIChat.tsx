@@ -37,7 +37,7 @@ function buildSystemPrompt(userData: Record<string, unknown>): string {
   const risk = (userData?.latestRisk as any)?.riskLevel ?? "not assessed";
   const riskScore = (userData?.latestRisk as any)?.riskScore ?? "not assessed";
 
-  return `You are HerHealth AI — a specialized medical AI assistant for women's health, focused on Diabetes (Type 2 & Gestational), Obesity, Menopause, and Metabolic Health. You must always personalize responses using the user's health data below.
+  return `You are HerHealth AI — a highly advanced medical AI assistant for women's health, strictly focused on Diabetes (Type 2 & Gestational), Obesity, Menopause, and Metabolic Health.
 
 USER HEALTH PROFILE:
 - Health Stage: ${stage}
@@ -49,12 +49,12 @@ USER HEALTH PROFILE:
 - Diabetes History: ${history}
 - AI Risk Level: ${risk} (Score: ${riskScore}/100)
 
-GUIDELINES:
-- Always reference the user's actual profile data in your response
-- Focus on Diabetes prevention, Obesity risk, Gestational health, and Menopause metabolic changes
-- Be empathetic, clear, and medically accurate
-- Keep responses to 2-3 short paragraphs
-- Do not use excessive markdown formatting`;
+CRITICAL INSTRUCTIONS:
+1. YOU MUST ANSWER THE USER'S QUESTION DIRECTLY AND SPECIFICALLY. Do not just give generic advice. If they ask a specific question, answer that exact question.
+2. Personalize your answer based heavily on the USER HEALTH PROFILE provided above.
+3. Be highly empathetic but medically rigorous.
+4. Keep responses concise (2-3 short paragraphs max).
+5. Do not use excessive markdown.`;
 }
 
 const AIChat = () => {
@@ -207,12 +207,12 @@ const AIChat = () => {
               </motion.div>
             ))}
             {thinking && (
-              <div className="flex justify-start">
-                <div className="bg-card border border-border rounded-2xl px-5 py-3.5 card-shadow flex items-center gap-2">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start">
+                <div className="bg-card border border-border rounded-2xl px-5 py-4 flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                  <p className="text-body text-muted-foreground">Analysing your health data…</p>
+                  <span className="text-body text-muted-foreground">HerHealth AI is thinking...</span>
                 </div>
-              </div>
+              </motion.div>
             )}
             <div ref={bottomRef} />
           </div>
@@ -232,22 +232,24 @@ const AIChat = () => {
             </div>
           )}
 
-          {/* Input */}
-          <div className="flex gap-3">
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
-              placeholder="Ask about diabetes risk, obesity, menopause, or your health profile…"
-              className="flex-1 px-5 py-3.5 bg-card border border-border rounded-xl text-body text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20"
-            />
-            <button
-              onClick={() => sendMessage(input)}
-              disabled={thinking || !input.trim()}
-              className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center text-primary-foreground hover-lift shrink-0 disabled:opacity-50"
-            >
-              <Send className="w-5 h-5" />
-            </button>
+          {/* Input Area */}
+          <div className="pt-4 border-t border-border mt-auto pb-24 md:pb-0">
+            <div className="flex gap-3">
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
+                placeholder="Ask about diabetes risk, obesity, menopause, or your health profile…"
+                className="flex-1 px-5 py-3.5 bg-card border border-border rounded-xl text-body text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20"
+              />
+              <button
+                onClick={() => sendMessage(input)}
+                disabled={thinking || !input.trim()}
+                className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center text-primary-foreground hover-lift shrink-0 disabled:opacity-50"
+              >
+                <Send className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </main>
       </div>
