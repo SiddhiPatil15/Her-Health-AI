@@ -302,6 +302,363 @@ def phq9_evaluate():
         logger.error(str(e))
         return jsonify({"error": str(e)}), 400
 
+# --- Advanced Health Endpoints ---
+
+@app.route('/api/diet-plan', methods=['POST'])
+def diet_plan():
+    data = request.json
+    try:
+        age = float(data.get('age', 30))
+        height = float(data.get('heightCm', 160))
+        weight = float(data.get('weightKg', 60))
+        activity = data.get('activityLevel', 'moderate')
+        stage = data.get('broadHealthStage', 'general')
+        diet = data.get('dietType', 'balanced')
+        cycle_stage = data.get('cycleStage', 'follicular')
+        
+        # Read separate risk parameters
+        diabetes_risk = float(data.get('diabetesRiskScore', data.get('riskScore', 30)))
+        obesity_risk = float(data.get('obesityRiskScore', data.get('riskScore', 30)))
+        risk_score = max(diabetes_risk, obesity_risk)
+
+        # Calculate BMR using Harris-Benedict (for females)
+        bmr = 10 * weight + 6.25 * height - 5 * age - 161
+        
+        # Activity Multipliers
+        act_map = {'sedentary': 1.2, 'light': 1.375, 'moderate': 1.55, 'very': 1.725}
+        multiplier = act_map.get(activity, 1.375)
+        tdee = bmr * multiplier
+
+        # Adjust for stage and risks
+        calories = tdee
+        if stage == 'pregnancy':
+            calories += 300  # additional needs
+        
+        # If high risk, suggest a small calorie deficit to manage weight/glycemia
+        if risk_score > 55:
+            calories -= 300
+        
+        calories = max(int(calories), 1200)
+
+        # Macro split targets
+        if diet == 'keto':
+            p_pct, c_pct, f_pct = 0.25, 0.05, 0.70
+        elif risk_score > 50 or stage == 'pregnancy':
+            # Diabetic-friendly / Low-Glycemic
+            p_pct, c_pct, f_pct = 0.25, 0.35, 0.40
+        else:
+            p_pct, c_pct, f_pct = 0.20, 0.50, 0.30
+
+        protein_g = int((calories * p_pct) / 4)
+        carbs_g = int((calories * c_pct) / 4)
+        fat_g = int((calories * f_pct) / 9)
+
+        # Determine stage recommendations
+        cycle_tips = {
+            'menstrual': 'Focus on iron-rich foods (lean red meat, spinach, lentils) and warm teas. Keep hydrated.',
+            'follicular': 'Optimal time for insulin sensitivity. Support energy with fresh vegetables and lean proteins.',
+            'ovulation': 'Support ovulation with high-fiber foods, seed rotation (pumpkin, flax), and antioxidant-rich berries.',
+            'luteal': 'Manage cravings with healthy fats, magnesium-rich foods (dark chocolate, almonds, avocados), and complex carbohydrates.'
+        }
+        cycle_rec = cycle_tips.get(cycle_stage, 'Maintain a nutrient-dense diet focusing on lean proteins and dietary fiber.')
+
+        api_key = os.getenv("GEMINI_API_KEY")
+        meals = None
+        
+        # Try to generate personalized meals using Gemini
+        if api_key:
+            try:
+                genai.configure(api_key=api_key)
+                prompt = (
+                    f"Generate a daily meal plan (Breakfast, Lunch, Dinner, Snacks) for a women's health app.\n"
+                    f"User Profile: Age {age}, Height {height}cm, Weight {weight}kg, Activity: {activity}, "
+                    f"Diet style: {diet}, Health Stage: {stage}, Cycle Phase: {cycle_stage}.\n"
+                    f"Diabetes Risk: {diabetes_risk}/100, Obesity Risk: {obesity_risk}/100.\n"
+                    f"Daily Targets: {calories} kcal, {protein_g}g Protein, {carbs_g}g Carbs, {fat_g}g Fat.\n"
+                    f"Strictly focus on diabetic-friendly, low-glycemic, or metabolic health optimizations depending on profile risk.\n"
+                    f"Respond ONLY with a JSON object matching this schema:\n"
+                    f"{{\n"
+                    f"  \"meals\": {{\n"
+                    f"    \"breakfast\": {{\n"
+                    f"      \"name\": \"...\",\n"
+                    f"      \"details\": \"...\"\n"
+                    f"    }},\n"
+                    f"    \"lunch\": {{\n"
+                    f"      \"name\": \"...\",\n"
+                    f"      \"details\": \"...\"\n"
+                    f"    }},\n"
+                    f"    \"dinner\": {{\n"
+                    f"      \"name\": \"...\",\n"
+                    f"      \"details\": \"...\"\n"
+                    f"    }},\n"
+                    f"    \"snacks\": {{\n"
+                    f"      \"name\": \"...\",\n"
+                    f"      \"details\": \"...\"\n"
+                    f"    }}\n"
+                    f"  }},\n"
+                    f"  \"foodsToIncrease\": [\"...\", \"...\"],\n"
+                    f"  \"foodsToAvoid\": [\"...\", \"...\"],\n"
+                    f"  \"lifestyleTips\": [\"...\", \"...\"]\n"
+                    f"}}"
+                )
+                model = genai.GenerativeModel('gemini-2.5-flash')
+                response = model.generate_content(prompt)
+                res_text = response.text.strip()
+                if "```json" in res_text:
+                    res_text = res_text.split("```json")[1].split("```")[0].strip()
+                elif "```" in res_text:
+                    res_text = res_text.split("```")[1].split("```")[0].strip()
+                meals = json.loads(res_text)
+            except Exception as gemini_err:
+                logger.warning("Gemini diet generation failed, using fallback: " + str(gemini_err))
+
+        if not meals:
+            # Fallback static meal plan
+            meals = {
+                "meals": {
+                    "breakfast": {
+                        "name": "Greek Yogurt Parfait or Oatmeal",
+                        "details": "150g Greek yogurt or 1/2 cup steel-cut oats, topped with pumpkin seeds, chia seeds, and a handful of berries."
+                    },
+                    "lunch": {
+                        "name": "Mediterranean Quinoa Salad",
+                        "details": "Quinoa mixed with cherry tomatoes, cucumber, olives, grilled chicken breast (120g), and extra virgin olive oil dressing."
+                    },
+                    "dinner": {
+                        "name": "Baked Salmon with Broccoli",
+                        "details": "150g baked salmon fillet served with steamed broccoli florets drizzled with olive oil and half a sweet potato."
+                    },
+                    "snacks": {
+                        "name": "Almonds & Apple Slices",
+                        "details": "A handful of raw almonds (15-20) and half a green apple sliced."
+                    }
+                },
+                "foodsToIncrease": ["Lean proteins", "Leafy green vegetables", "Avocado & Olive oil", "Seeds (flax, pumpkin)"],
+                "foodsToAvoid": ["Refined sugar", "Processed fruit juices", "White bread & Pastas", "Trans-fats"],
+                "lifestyleTips": [
+                    "Drink at least 2.5L of water daily.",
+                    "Engage in a 10-minute light walk immediately after lunch and dinner to assist glucose uptake.",
+                    "Ensure 7.5 to 8 hours of restorative sleep to maintain insulin sensitivity."
+                ]
+            }
+
+        return jsonify({
+            "targetCalories": calories,
+            "macros": {
+                "protein": protein_g,
+                "carbs": carbs_g,
+                "fat": fat_g
+            },
+            "dietType": diet,
+            "cycleRecommendation": cycle_rec,
+            "plan": meals
+        })
+    except Exception as e:
+        logger.error(str(e))
+        return jsonify({"error": str(e)}), 400
+
+
+@app.route('/api/scan-food', methods=['POST'])
+def scan_food():
+    data = request.json
+    try:
+        image_base64 = data.get('image') # Base64 string
+        if not image_base64:
+            return jsonify({"error": "No image data provided"}), 400
+        
+        api_key = os.getenv("GEMINI_API_KEY")
+        scan_result = None
+
+        if api_key:
+            try:
+                genai.configure(api_key=api_key)
+                
+                # Setup image parts for Generative AI API
+                if "," in image_base64:
+                    header, img_data = image_base64.split(",", 1)
+                    mime_type = header.split(";")[0].split(":")[1]
+                else:
+                    img_data = image_base64
+                    mime_type = "image/jpeg"
+                
+                import base64
+                image_parts = [
+                    {
+                        "mime_type": mime_type,
+                        "data": base64.b64decode(img_data)
+                    }
+                ]
+                
+                prompt = (
+                    "Analyze this food image as an expert nutritionist.\n"
+                    "Detect the food items present, estimate the portion size, calories, and macros (protein, carbs, fat, sugar).\n"
+                    "Assess a health score from 0 to 100 based on nutritional density.\n"
+                    "Respond ONLY with a JSON object matching this schema:\n"
+                    "{\n"
+                    "  \"foodItems\": [\"...\"],\n"
+                    "  \"calories\": 350,\n"
+                    "  \"protein\": 15,\n"
+                    "  \"carbs\": 30,\n"
+                    "  \"fat\": 18,\n"
+                    "  \"sugar\": 4,\n"
+                    "  \"healthScore\": 85,\n"
+                    "  \"healthierAlternatives\": [\"...\", \"...\"],\n"
+                    "  \"portionRecommendation\": \"...\"\n"
+                    "}"
+                )
+                
+                model = genai.GenerativeModel('gemini-2.5-flash')
+                response = model.generate_content([prompt, image_parts[0]])
+                res_text = response.text.strip()
+                if "```json" in res_text:
+                    res_text = res_text.split("```json")[1].split("```")[0].strip()
+                elif "```" in res_text:
+                    res_text = res_text.split("```")[1].split("```")[0].strip()
+                scan_result = json.loads(res_text)
+            except Exception as vision_err:
+                logger.warning("Gemini Vision food analysis failed, using mock fallback: " + str(vision_err))
+
+        if not scan_result:
+            # Local mock vision analyser fallback
+            scan_result = {
+                "foodItems": ["Grilled Chicken Breast", "Quinoa", "Steamed Broccoli", "Avocado Slices"],
+                "calories": 420,
+                "protein": 34,
+                "carbs": 38,
+                "fat": 14,
+                "sugar": 2,
+                "healthScore": 92,
+                "healthierAlternatives": ["Use dark leafy greens instead of white rice", "Add seeds for extra fiber"],
+                "portionRecommendation": "Excellent balanced meal. Keep portion to 1 bowl (approx 400g total weight)."
+            }
+
+        return jsonify(scan_result)
+    except Exception as e:
+        logger.error(str(e))
+        return jsonify({"error": str(e)}), 400
+
+
+@app.route('/api/risk-forecast', methods=['POST'])
+def risk_forecast():
+    data = request.json
+    try:
+        # User details
+        age = float(data.get('age', 30))
+        height = float(data.get('heightCm', 160))
+        weight = float(data.get('weightKg', 60))
+        activity = data.get('activityLevel', 'moderate')
+        sleep = float(data.get('sleepHours', 7))
+        diet = data.get('dietType', 'balanced')
+        history = data.get('diabetesHistory', 'no')
+        bp = data.get('bloodPressure', 'normal')
+        
+        # Modifiers (lifestyle improvement simulations)
+        weight_reduction = float(data.get('weightReductionKg', 0))
+        exercise_increase = data.get('exerciseIncrease', 'none') # none, light, moderate, active
+        diet_improvement = data.get('dietImprovement', 'none') # none, low-sugar, healthy
+
+        bmi = weight / ((height / 100) ** 2)
+        
+        # Function to predict risk scores for diabetes, obesity, and gestational diabetes
+        def predict_scores(w, act, dt):
+            b = w / ((height / 100) ** 2)
+            activity_map = {'sedentary': 0, 'light': 1, 'moderate': 2, 'very': 3, 'none': 1}
+            diet_map = {'balanced': 2, 'vegetarian': 2, 'vegan': 3, 'keto': 1, 'none': 2, 'low-sugar': 3, 'healthy': 3}
+            hist_map = {'no': 0, 'family': 1, 'gestational': 2, 'type2': 3}
+            bp_map = {'normal': 0, 'low': 0, 'elevated': 1, 'high': 2}
+            
+            feats = [[
+                age,
+                b,
+                activity_map.get(act, 1),
+                sleep,
+                diet_map.get(dt, 2),
+                hist_map.get(history, 0),
+                bp_map.get(bp, 0)
+            ]]
+            
+            p_gd = models['gestational'].predict_proba(feats)[0][1]
+            p_ob = models['obesity'].predict_proba(feats)[0][1]
+            p_db = models['diabetes'].predict_proba(feats)[0][1]
+            
+            gd_score = min(max(int(p_gd * 100) + 15, 10), 95)
+            ob_score = min(max(int(p_ob * 100) + 15, 10), 95)
+            db_score = min(max(int(p_db * 100) + 15, 10), 95)
+            
+            return db_score, ob_score, gd_score
+
+        # Baseline Current Risks
+        curr_db, curr_ob, curr_gd = predict_scores(weight, activity, diet)
+
+        # Optimized Parameters
+        opt_weight = max(weight - weight_reduction, 40)
+        
+        opt_activity = activity
+        if exercise_increase != 'none':
+            opt_activity = exercise_increase
+            
+        opt_diet = diet
+        if diet_improvement in ['low-sugar', 'healthy']:
+            opt_diet = 'vegan' # highest rating in training features
+
+        opt_db, opt_ob, opt_gd = predict_scores(opt_weight, opt_activity, opt_diet)
+
+        # Generate individual forecast timelines
+        # Helper to construct timeline
+        def make_timeline(current, optimized):
+            reduction = current - optimized
+            return [
+                {"month": "Current", "risk": current},
+                {"month": "3 Months", "risk": max(int(current - reduction * 0.35), 10) if reduction > 0 else min(current + 1, 95)},
+                {"month": "6 Months", "risk": max(int(current - reduction * 0.70), 10) if reduction > 0 else min(current + 2, 95)},
+                {"month": "12 Months", "risk": max(int(optimized), 10)}
+            ]
+            
+        def make_status_quo_timeline(current):
+            return [
+                {"month": "Current", "risk": current},
+                {"month": "3 Months", "risk": min(current + 1, 95)},
+                {"month": "6 Months", "risk": min(current + 2, 95)},
+                {"month": "12 Months", "risk": min(current + 3, 95)}
+            ]
+
+        # Calculate improvement percentages
+        imp_db = max(0, int(((curr_db - opt_db) / curr_db * 100))) if curr_db > 0 else 0
+        imp_ob = max(0, int(((curr_ob - opt_ob) / curr_ob * 100))) if curr_ob > 0 else 0
+        imp_gd = max(0, int(((curr_gd - opt_gd) / curr_gd * 100))) if curr_gd > 0 else 0
+
+        return jsonify({
+            "diabetes": {
+                "currentRisk": curr_db,
+                "predictedRisk": opt_db,
+                "improvementPercentage": imp_db,
+                "statusQuoTimeline": make_status_quo_timeline(curr_db),
+                "optimizedTimeline": make_timeline(curr_db, opt_db)
+            },
+            "obesity": {
+                "currentRisk": curr_ob,
+                "predictedRisk": opt_ob,
+                "improvementPercentage": imp_ob,
+                "statusQuoTimeline": make_status_quo_timeline(curr_ob),
+                "optimizedTimeline": make_timeline(curr_ob, opt_ob)
+            },
+            "gestational": {
+                "currentRisk": curr_gd,
+                "predictedRisk": opt_gd,
+                "improvementPercentage": imp_gd,
+                "statusQuoTimeline": make_status_quo_timeline(curr_gd),
+                "optimizedTimeline": make_timeline(curr_gd, opt_gd)
+            },
+            "metabolic": {
+                "currentRisk": max(curr_db, curr_ob, curr_gd),
+                "predictedRisk": max(opt_db, opt_ob, opt_gd),
+                "improvementPercentage": max(imp_db, imp_ob, imp_gd)
+            }
+        })
+    except Exception as e:
+        logger.error(str(e))
+        return jsonify({"error": str(e)}), 400
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):

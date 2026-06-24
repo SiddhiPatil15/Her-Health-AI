@@ -1,9 +1,14 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { auth, db } from "../lib/firebase";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { setDoc, doc } from "firebase/firestore";
+import { 
+  auth, 
+  db,
+  createUserWithEmailAndPassword,
+  updateProfile,
+  setDoc,
+  doc
+} from "../lib/firebase";
 import { toast } from "sonner";
 import { Heart } from "lucide-react";
 
@@ -25,14 +30,19 @@ const Signup = () => {
       // Store display name in Auth
       await updateProfile(user, { displayName: fullName });
 
-      // Create initial user document in Firestore
-      await setDoc(doc(db, "users", user.uid), {
-        email: user.email,
-        fullName: fullName,
-        onboardingCompleted: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
+      // Create initial user document in Firestore (best-effort)
+      try {
+        await setDoc(doc(db, "users", user.uid), {
+          email: user.email,
+          fullName: fullName,
+          onboardingCompleted: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      } catch (firestoreError: any) {
+        console.error("Firestore write failed during signup:", firestoreError);
+        toast.warning("Account created but profile sync had an issue. You can continue setup.", { duration: 5000 });
+      }
 
       toast.success("Account created! Let's start onboarding.");
       navigate("/onboarding");

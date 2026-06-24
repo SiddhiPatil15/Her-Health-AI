@@ -27,7 +27,7 @@ const Landing = () => {
           <Link to="/login" className="text-body text-muted-foreground hover:text-foreground transition-colors">Sign In</Link>
         </div>
         <div>
-          <Link to="/signup" className="px-4 md:px-5 py-2 md:py-2.5 gradient-primary text-primary-foreground rounded-xl text-[14px] md:text-body font-medium hover-lift">
+          <Link to="/login" className="px-4 md:px-5 py-2 md:py-2.5 gradient-primary text-primary-foreground rounded-xl text-[14px] md:text-body font-medium hover-lift">
             Get Started
           </Link>
         </div>
@@ -44,7 +44,7 @@ const Landing = () => {
               Helping women manage metabolic health during pregnancy and menopause with personalized AI insights and monthly progress reports.
             </motion.p>
             <motion.div variants={fadeUp} custom={3} className="flex flex-col sm:flex-row gap-4 pt-2 justify-center lg:justify-start">
-              <Link to="/signup" className="px-7 py-3 gradient-primary text-primary-foreground rounded-xl text-body font-medium hover-lift flex items-center justify-center gap-2">
+              <Link to="/login" className="px-7 py-3 gradient-primary text-primary-foreground rounded-xl text-body font-medium hover-lift flex items-center justify-center gap-2">
                 Start Health Journey <ArrowRight className="w-4 h-4" />
               </Link>
               <span onClick={() => document.getElementById('features')?.scrollIntoView({behavior:'smooth'})} className="px-7 py-3 bg-card border border-border text-foreground rounded-xl text-body font-medium hover-lift flex justify-center cursor-pointer">
@@ -160,7 +160,7 @@ const Landing = () => {
             Join thousands of women taking control of their metabolic health with AI-powered insights.
           </motion.p>
           <motion.div variants={fadeUp} custom={2}>
-            <Link to="/signup" className="px-8 py-3.5 bg-card text-foreground rounded-xl text-body font-medium hover-lift inline-flex items-center gap-2">
+            <Link to="/login" className="px-8 py-3.5 bg-card text-foreground rounded-xl text-body font-medium hover-lift inline-flex items-center gap-2">
               Get Started Free <ArrowRight className="w-4 h-4" />
             </Link>
           </motion.div>

@@ -5,6 +5,7 @@
  */
 
 import {
+  db,
   addDoc,
   collection,
   doc,
@@ -14,8 +15,7 @@ import {
   query,
   setDoc,
   deleteDoc,
-} from "firebase/firestore";
-import { db } from "./firebase";
+} from "./firebase";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -54,6 +54,43 @@ export interface RiskRecord {
   insights: string[];
   createdAt: string;
 }
+
+export interface CycleLog {
+  id?: string;
+  startDate: string;      // "YYYY-MM-DD"
+  durationDays: number;
+  flowIntensity: "light" | "medium" | "heavy";
+  symptoms: string[];     // ["cramps", "bloating", "headache", "fatigue", "mood swings"]
+  notes?: string;
+  createdAt?: string;
+}
+
+export interface FoodLog {
+  id?: string;
+  date: string;           // "YYYY-MM-DD"
+  mealType: "breakfast" | "lunch" | "dinner" | "snack";
+  foodItems: string[];
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  sugar: number;
+  imageUrl?: string;
+  scanned: boolean;
+  createdAt?: string;
+}
+
+export interface WearableLog {
+  id?: string;
+  date: string;           // "YYYY-MM-DD"
+  steps: number;
+  distanceKm: number;
+  caloriesBurned: number;
+  restingHeartRate: number;
+  sleepDurationMinutes: number;
+  lastSyncedAt?: string;
+}
+
 
 // ─── Daily health logs ────────────────────────────────────────────────────────
 
@@ -183,3 +220,45 @@ export async function updateUserMetrics(
     { merge: true },
   );
 }
+
+// ─── Menstrual Cycle tracker ──────────────────────────────────────────────────
+export async function saveCycleLog(userId: string, log: Omit<CycleLog, "createdAt">): Promise<string> {
+  const ref = collection(db, "users", userId, "cycleLogs");
+  const snap = await addDoc(ref, { ...log, createdAt: new Date().toISOString() });
+  return snap.id;
+}
+
+export async function getCycleLogs(userId: string, maxLogs = 30): Promise<CycleLog[]> {
+  const ref = collection(db, "users", userId, "cycleLogs");
+  const q = query(ref, orderBy("startDate", "desc"), limit(maxLogs));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as CycleLog));
+}
+
+// ─── Food tracker ─────────────────────────────────────────────────────────────
+export async function saveFoodLog(userId: string, log: Omit<FoodLog, "createdAt">): Promise<string> {
+  const ref = collection(db, "users", userId, "foodLogs");
+  const snap = await addDoc(ref, { ...log, createdAt: new Date().toISOString() });
+  return snap.id;
+}
+
+export async function getFoodLogs(userId: string, maxLogs = 50): Promise<FoodLog[]> {
+  const ref = collection(db, "users", userId, "foodLogs");
+  const q = query(ref, orderBy("date", "desc"), limit(maxLogs));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as FoodLog));
+}
+
+// ─── Wearable logs ────────────────────────────────────────────────────────────
+export async function saveWearableLog(userId: string, log: Omit<WearableLog, "lastSyncedAt">): Promise<void> {
+  const ref = doc(db, "users", userId, "wearables", log.date);
+  await setDoc(ref, { ...log, lastSyncedAt: new Date().toISOString() }, { merge: true });
+}
+
+export async function getWearableLogs(userId: string, maxLogs = 30): Promise<WearableLog[]> {
+  const ref = collection(db, "users", userId, "wearables");
+  const q = query(ref, orderBy("date", "desc"), limit(maxLogs));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => d.data() as WearableLog);
+}
+

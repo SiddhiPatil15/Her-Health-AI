@@ -3,8 +3,7 @@ import { motion } from "framer-motion";
 import { Download, Share2, TrendingUp, Footprints, Moon, Heart, ArrowRight, Loader2 } from "lucide-react";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import { auth, db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { auth, db, doc, getDoc } from "@/lib/firebase";
 import { getHealthLogs } from "@/lib/healthService";
 import { toast } from "sonner";
 

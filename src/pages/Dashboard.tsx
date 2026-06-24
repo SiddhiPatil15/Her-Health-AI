@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
-import { auth, db } from "../lib/firebase";
-import { doc, onSnapshot } from "firebase/firestore";
-import { signOut, onAuthStateChanged } from "firebase/auth";
+import { 
+  auth, 
+  db,
+  doc, 
+  onSnapshot,
+  signOut, 
+  onAuthStateChanged
+} from "../lib/firebase";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -26,7 +31,11 @@ import {
   ChevronDown,
   Bookmark,
   CalendarPlus,
-  ArrowRight
+  ArrowRight,
+  Smartphone,
+  FileText,
+  Plus,
+  Apple
 } from "lucide-react";
 import { 
   LineChart, 
@@ -43,6 +52,12 @@ import { toast } from "sonner";
 import RiskPredictionCard from "@/components/dashboard/RiskPredictionCard";
 import { MoodTracker } from "@/components/dashboard/MoodTracker";
 import PHQ9Screening from "@/components/dashboard/PHQ9Screening";
+import CycleTrackerView from "@/components/dashboard/CycleTrackerView";
+import DietPlannerView from "@/components/dashboard/DietPlannerView";
+import HealthReportView from "@/components/dashboard/HealthReportView";
+import RiskSimulatorView from "@/components/dashboard/RiskSimulatorView";
+import FoodScannerView from "@/components/dashboard/FoodScannerView";
+import GoogleFitSyncView from "@/components/dashboard/GoogleFitSyncView";
 
 const progressData = [
   { name: 'Week 1', value: 55 },
@@ -62,6 +77,7 @@ const Dashboard = () => {
   const queryParams = new URLSearchParams(location.search);
   const initialTab = queryParams.get("tab") || "home";
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [showBreakdownDrawer, setShowBreakdownDrawer] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
@@ -72,31 +88,54 @@ const Dashboard = () => {
     { title: "Your Monthly Wrap is ready.", time: "1 day ago" }
   ]);
   useEffect(() => {
+    if (!auth || !db) {
+      console.warn("Firebase not configured");
+      setUserData({ fullName: "User", email: "", onboardingCompleted: false });
+      setLoading(false);
+      return;
+    }
+
     let unsubscribeDoc: (() => void) | undefined;
 
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       console.log("Dashboard: Auth state changed", user?.email);
       if (user) {
         // Set up real-time listener for user data
-        const docRef = doc(db, "users", user.uid);
-        unsubscribeDoc = onSnapshot(docRef, (docSnap) => {
-          if (docSnap.exists()) {
-            console.log("Dashboard: Data update from Firestore", docSnap.data());
-            setUserData(docSnap.data());
-          } else {
-            console.log("Dashboard: No Firestore document found");
+        try {
+          const docRef = doc(db, "users", user.uid);
+          unsubscribeDoc = onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+              console.log("Dashboard: Data update from Firestore", docSnap.data());
+              setUserData(docSnap.data());
+            } else {
+              console.log("Dashboard: No Firestore document found");
+              setUserData({ 
+                fullName: user.displayName || user.email?.split('@')[0] || "User",
+                email: user.email,
+                onboardingCompleted: false
+              });
+            }
+            setLoading(false);
+          }, (error) => {
+            console.error("Dashboard: Firestore error", error);
+            toast.error("Error connecting to database. Using offline mode.");
+            // Set fallback data so the dashboard renders instead of being blank
             setUserData({ 
               fullName: user.displayName || user.email?.split('@')[0] || "User",
               email: user.email,
               onboardingCompleted: false
             });
-          }
+            setLoading(false);
+          });
+        } catch (error) {
+          console.error("Dashboard: Failed to set up Firestore listener", error);
+          setUserData({ 
+            fullName: user.displayName || user.email?.split('@')[0] || "User",
+            email: user.email,
+            onboardingCompleted: false
+          });
           setLoading(false);
-        }, (error) => {
-          console.error("Dashboard: Firestore error", error);
-          toast.error("Error connecting to database");
-          setLoading(false);
-        });
+        }
       } else {
         console.log("Dashboard: No authenticated user");
         navigate("/login");
@@ -120,8 +159,6 @@ const Dashboard = () => {
     }
   };
 
-  // Removed handleSendMessage function to replace it with real navigation to /chat
-
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#FDFCFD] space-y-4">
       <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -135,25 +172,100 @@ const Dashboard = () => {
 
   // Dynamic Score Calculation
   const calculateDynamicScores = () => {
-    if (!userData) return { health: 72, activity: 65, sleep: 70 };
+    if (!userData) {
+      return { 
+        health: 72, 
+        activity: 65, 
+        sleep: 70,
+        breakdown: {
+          bmi: 80, activity: 65, sleep: 70, mental: 80, mood: 75, cycle: 90, nutrition: 80, diabetes: 75, obesity: 70
+        }
+      };
+    }
 
-    // Activity Score
+    // 1. BMI Score (Weight 20%)
+    const height = Number(userData.heightCm || 165);
+    const weight = Number(userData.weightKg || 65);
+    const bmiVal = weight / Math.pow(height / 100, 2);
+    let bmiScore = 100;
+    if (bmiVal < 18.5) {
+      bmiScore = 100 - (18.5 - bmiVal) * 15;
+    } else if (bmiVal > 24.9) {
+      bmiScore = 100 - (bmiVal - 24.9) * 10;
+    }
+    bmiScore = Math.max(10, Math.min(100, Math.round(bmiScore)));
+
+    // 2. Activity Score (Weight 15%)
     const activityMap = { sedentary: 30, light: 55, moderate: 80, very: 95 };
-    const activityScore = activityMap[userData.activityLevel as keyof typeof activityMap] || 60;
+    let activityScore = activityMap[userData.activityLevel as keyof typeof activityMap] || 60;
+    if (userData.latestWearables?.steps !== undefined) {
+      const steps = Number(userData.latestWearables.steps);
+      if (steps >= 10000) activityScore = 95;
+      else if (steps >= 8000) activityScore = 85;
+      else if (steps >= 5000) activityScore = 65;
+      else activityScore = 35;
+    }
 
-    // Sleep Score (Target 8 hours)
-    const sleepHours = Number(userData.sleepHours || 7);
-    const sleepScore = Math.max(0, 100 - Math.abs(8 - sleepHours) * 15);
+    // 3. Sleep Score (Weight 10%)
+    let sleepHours = Number(userData.sleepHours || 7);
+    if (userData.latestWearables?.sleepDurationMinutes !== undefined) {
+      sleepHours = Number(userData.latestWearables.sleepDurationMinutes) / 60;
+    }
+    const sleepScore = Math.max(10, 100 - Math.abs(8 - sleepHours) * 15);
 
-    // Baseline Health Score (0-100)
-    // Risk score is 0-100 (higher is bad), so health is 100 - risk
-    const aiRiskScore = userData.latestRisk?.riskScore ?? 30; // fallback or default
-    const healthScore = Math.round(100 - aiRiskScore);
+    // 4. Mental Wellness Score (Weight 15%)
+    const phq9Score = Number(userData.phq9LatestScore || 0);
+    let mentalScore = 100;
+    if (phq9Score > 19) mentalScore = 20;
+    else if (phq9Score > 14) mentalScore = 40;
+    else if (phq9Score > 9) mentalScore = 60;
+    else if (phq9Score > 4) mentalScore = 80;
+
+    // 5. Mood Tracking Score (Weight 10%)
+    const moodScore = 75;
+
+    // 6. Menstrual Health Score (Weight 10%)
+    const cycleScore = userData.cycleIrregular ? 65 : 90;
+
+    // 7. Nutrition Quality Score (Weight 10%)
+    const nutritionMap = { balanced: 90, vegetarian: 85, vegan: 85, keto: 80 };
+    const nutritionScore = nutritionMap[userData.dietType as keyof typeof nutritionMap] || 80;
+
+    // 8. Diabetes Risk Score (Weight 5%)
+    const aiRiskScore = userData.latestRisk?.riskScore ?? 30;
+    const diabetesScore = Math.round(100 - aiRiskScore);
+
+    // 9. Obesity Risk Score (Weight 5%)
+    const obesityScore = Math.max(10, Math.round(100 - (userData.latestRisk?.riskScore ? userData.latestRisk.riskScore * 0.9 : 30)));
+
+    // Weighted Health Score calculation
+    const weightedScore = Math.round(
+      (bmiScore * 0.20) +
+      (activityScore * 0.15) +
+      (sleepScore * 0.10) +
+      (mentalScore * 0.15) +
+      (moodScore * 0.10) +
+      (cycleScore * 0.10) +
+      (nutritionScore * 0.10) +
+      (diabetesScore * 0.05) +
+      (obesityScore * 0.05)
+    );
 
     return { 
-      health: Math.max(10, healthScore), 
+      health: Math.max(10, Math.min(100, weightedScore)), 
       activity: activityScore, 
-      sleep: Math.round(sleepScore) 
+      sleep: Math.round(sleepScore),
+      breakdown: {
+        bmi: bmiScore,
+        activity: activityScore,
+        sleep: Math.round(sleepScore),
+        mental: mentalScore,
+        mood: moodScore,
+        cycle: cycleScore,
+        nutrition: nutritionScore,
+        diabetes: diabetesScore,
+        obesity: obesityScore
+      }
     };
   };
 
@@ -168,6 +280,7 @@ const Dashboard = () => {
             firstName={firstName} 
             setActiveTab={setActiveTab}
             scores={scores}
+            setShowBreakdownDrawer={setShowBreakdownDrawer}
           />
         );
       case "calendar":
@@ -193,6 +306,18 @@ const Dashboard = () => {
         return <SavedView setActiveTab={setActiveTab} />;
       case "settings":
         return <SettingsView setActiveTab={setActiveTab} userData={userData} />;
+      case "cycle":
+        return <CycleTrackerView setActiveTab={setActiveTab} />;
+      case "nutrition":
+        return <DietPlannerView userData={userData} setActiveTab={setActiveTab} />;
+      case "report":
+        return <HealthReportView userData={userData} scores={scores} setActiveTab={setActiveTab} />;
+      case "simulator":
+        return <RiskSimulatorView userData={userData} setActiveTab={setActiveTab} />;
+      case "scanner":
+        return <FoodScannerView setActiveTab={setActiveTab} />;
+      case "wearables":
+        return <GoogleFitSyncView setActiveTab={setActiveTab} />;
       default:
         return <DashboardHome userData={userData} firstName={firstName} setActiveTab={setActiveTab} scores={scores} />;
     }
@@ -332,12 +457,72 @@ const Dashboard = () => {
         </header>
 
         {renderTabContent()}
+
+        {/* Score Breakdown Drawer overlay */}
+        <AnimatePresence>
+          {showBreakdownDrawer && scores.breakdown && (
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex justify-end">
+              <div className="absolute inset-0" onClick={() => setShowBreakdownDrawer(false)} />
+              
+              <motion.div
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="w-full max-w-md bg-white h-full relative z-10 shadow-2xl p-8 flex flex-col justify-between overflow-y-auto"
+              >
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center pb-4 border-b border-gray-100">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900">Health Score Breakdown</h3>
+                      <p className="text-xs text-muted-foreground">Unified Index: {scores.health}/100</p>
+                    </div>
+                    <button 
+                      onClick={() => setShowBreakdownDrawer(false)} 
+                      className="p-1.5 hover:bg-gray-100 rounded-xl transition text-gray-500 font-bold"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* Breakdown Parameters */}
+                  <div className="space-y-4">
+                    <BreakdownRow label="Body Mass Index (BMI)" val={scores.breakdown.bmi} weight="20%" icon="⚖️" />
+                    <BreakdownRow label="Physical Activity" val={scores.breakdown.activity} weight="15%" icon="🏃‍♀️" />
+                    <BreakdownRow label="Sleep Restorativeness" val={scores.breakdown.sleep} weight="10%" icon="🌙" />
+                    <BreakdownRow label="Mental Wellness (PHQ-9)" val={scores.breakdown.mental} weight="15%" icon="🧠" />
+                    <BreakdownRow label="Mood Stability" val={scores.breakdown.mood} weight="10%" icon="🎭" />
+                    <BreakdownRow label="Menstrual Cycle Health" val={scores.breakdown.cycle} weight="10%" icon="🩸" />
+                    <BreakdownRow label="Nutrition Quality" val={scores.breakdown.nutrition} weight="10%" icon="🥦" />
+                    <BreakdownRow label="Diabetes Risk Buffer" val={scores.breakdown.diabetes} weight="5%" icon="💉" />
+                    <BreakdownRow label="Obesity Risk Buffer" val={scores.breakdown.obesity} weight="5%" icon="📉" />
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-gray-100 mt-6 space-y-4">
+                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Improvement Tip</h4>
+                  <p className="text-xs text-gray-650 leading-relaxed font-semibold">
+                    {scores.health < 80 
+                      ? "Your dynamic health score is influenced by metabolic risk buffers. Increasing daily steps by 2,000 and logging mood regularly will improve your score." 
+                      : "Excellent score! Keep maintaining your current activity, diet preferences, and hydration goals."}
+                  </p>
+                  <button
+                    onClick={() => { setShowBreakdownDrawer(false); setActiveTab("report"); }}
+                    className="w-full py-3.5 bg-primary text-white rounded-2xl font-bold hover:shadow-lg transition flex items-center justify-center gap-2 text-xs"
+                  >
+                    Export Comprehensive Report
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
 };
 
-const DashboardHome = ({ userData, firstName, setActiveTab, scores }: any) => (
+const DashboardHome = ({ userData, firstName, setActiveTab, scores, setShowBreakdownDrawer }: any) => (
   <motion.div 
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
@@ -373,6 +558,7 @@ const DashboardHome = ({ userData, firstName, setActiveTab, scores }: any) => (
           trend="+5% this week"
           color="bg-rose-50"
           trendColor="text-emerald-500"
+          onClick={() => setShowBreakdownDrawer && setShowBreakdownDrawer(true)}
         />
         <MiniStatCard 
           icon={<Activity className="w-5 h-5 text-blue-500" />}
@@ -392,7 +578,51 @@ const DashboardHome = ({ userData, firstName, setActiveTab, scores }: any) => (
         />
       </div>
 
-
+      {/* Advanced Health Modules Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <ModuleCard 
+          icon={<Droplets className="w-6 h-6 text-[#FF758C]" />}
+          title="Menstrual Cycle tracker"
+          desc="Log period, flow, symptoms, and see ovulation & fertile windows."
+          onClick={() => setActiveTab("cycle")}
+          btnText="Track Cycle"
+        />
+        <ModuleCard 
+          icon={<Apple className="w-6 h-6 text-emerald-500" />}
+          title="Personalized Diet Planner"
+          desc="AI-powered diet logs, macro splits, and recipe recommendations."
+          onClick={() => setActiveTab("nutrition")}
+          btnText="View Diet Plan"
+        />
+        <ModuleCard 
+          icon={<FileText className="w-6 h-6 text-indigo-500" />}
+          title="Clinical Health Report"
+          desc="Download a professional healthcare layout report."
+          onClick={() => setActiveTab("report")}
+          btnText="Generate PDF"
+        />
+        <ModuleCard 
+          icon={<TrendingUp className="w-6 h-6 text-purple-500" />}
+          title="Future Risk Simulator"
+          desc="Simulate exercise & weight choices on diabetes/obesity risks."
+          onClick={() => setActiveTab("simulator")}
+          btnText="Open Simulator"
+        />
+        <ModuleCard 
+          icon={<Search className="w-6 h-6 text-orange-500" />}
+          title="Food Scanner (AI Vision)"
+          desc="Analyze calories & macros instantly using computer vision."
+          onClick={() => setActiveTab("scanner")}
+          btnText="Scan Food Plate"
+        />
+        <ModuleCard 
+          icon={<Smartphone className="w-6 h-6 text-blue-500" />}
+          title="Google Fit Integration"
+          desc="Sync wearables steps, sleep, distance, and heart rates."
+          onClick={() => setActiveTab("wearables")}
+          btnText="Sync Google Fit"
+        />
+      </div>
 
       {/* Mental Health Screening Banner */}
       {(userData?.broadHealthStage === "pregnancy" || userData?.broadHealthStage === "postpartum" || true) && (
@@ -418,7 +648,7 @@ const DashboardHome = ({ userData, firstName, setActiveTab, scores }: any) => (
       {/* Middle Section Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Health Rate Circle */}
-        <div className="bg-white p-8 rounded-[40px] border border-[#F3F4F6] shadow-sm hover:shadow-md transition-shadow">
+        <div onClick={() => setShowBreakdownDrawer && setShowBreakdownDrawer(true)} className="bg-white p-8 rounded-[40px] border border-[#F3F4F6] shadow-sm hover:shadow-md transition-shadow cursor-pointer">
           <h3 className="text-h3 font-bold mb-8">Health Rate</h3>
           <div className="flex flex-col items-center">
              <div className="relative w-48 h-48 flex items-center justify-center">
@@ -702,8 +932,8 @@ const SidebarIcon = ({ icon, active, onClick }: any) => (
   </div>
 );
 
-const MiniStatCard = ({ icon, label, value, trend, color, trendColor }: any) => (
-  <motion.div whileHover={{ y: -5 }} className="bg-white p-6 rounded-[32px] border border-[#F3F4F6] shadow-sm relative overflow-hidden group">
+const MiniStatCard = ({ icon, label, value, trend, color, trendColor, onClick }: any) => (
+  <motion.div onClick={onClick} whileHover={{ y: -5 }} className="bg-white p-6 rounded-[32px] border border-[#F3F4F6] shadow-sm relative overflow-hidden group cursor-pointer">
     <div className="absolute top-0 right-0 w-24 h-24 bg-rose-50/30 rounded-full -mr-12 -mt-12 transition-all duration-500 group-hover:scale-150"></div>
     <div className="flex justify-between items-start mb-6 relative">
       <div className={`w-10 h-10 rounded-2xl ${color} flex items-center justify-center shadow-sm`}>
@@ -716,6 +946,36 @@ const MiniStatCard = ({ icon, label, value, trend, color, trendColor }: any) => 
       <p className="text-[24px] font-bold text-[#1F2937]">{value}</p>
     </div>
   </motion.div>
+);
+
+const ModuleCard = ({ icon, title, desc, onClick, btnText }: any) => (
+  <motion.div whileHover={{ y: -4 }} className="bg-white p-6 rounded-[28px] border border-[#F3F4F6] shadow-sm hover:shadow-md transition flex flex-col justify-between h-[220px]">
+    <div>
+      <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center mb-4 text-[#1F2937] shadow-sm">
+        {icon}
+      </div>
+      <h3 className="font-bold text-[16px] text-gray-800 leading-snug">{title}</h3>
+      <p className="text-[12px] text-gray-400 mt-1 leading-normal line-clamp-2">{desc}</p>
+    </div>
+    <button onClick={onClick} className="text-primary font-bold text-[13px] text-left hover:text-rose-500 transition-colors flex items-center gap-1.5 mt-4">
+      {btnText} <ArrowRight className="w-3.5 h-3.5" />
+    </button>
+  </motion.div>
+);
+
+const BreakdownRow = ({ label, val, weight, icon }: { label: string; val: number; weight: string; icon: string }) => (
+  <div className="space-y-1.5">
+    <div className="flex justify-between items-center text-[11px] font-semibold">
+      <span className="text-gray-600 flex items-center gap-1.5"><span>{icon}</span> {label}</span>
+      <span className="text-gray-900 font-bold">{val} pts <span className="text-gray-400 font-normal text-[9px]">({weight})</span></span>
+    </div>
+    <div className="w-full bg-gray-100 h-2 rounded-full">
+      <div 
+        className={`h-2 rounded-full transition-all ${val > 80 ? 'bg-emerald-500' : val > 50 ? 'bg-amber-400' : 'bg-rose-500'}`} 
+        style={{ width: `${val}%` }}
+      ></div>
+    </div>
+  </div>
 );
 
 const DetailRow = ({ label, value, color }: any) => (

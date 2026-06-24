@@ -2,8 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Brain, Heart, ArrowRight, CheckCircle2, RotateCcw, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { auth, db } from "@/lib/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { auth, db, collection, addDoc } from "@/lib/firebase";
 
 const questions = [
   "Little interest or pleasure in doing things",

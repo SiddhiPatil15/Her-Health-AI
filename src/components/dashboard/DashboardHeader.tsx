@@ -1,8 +1,6 @@
 import { Search, Bell, ChevronDown, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
-import { auth, db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
-import { signOut } from "firebase/auth";
+import { auth, db, doc, getDoc, signOut } from "@/lib/firebase";
 import { useNavigate } from "react-router-dom";
 
 const DashboardHeader = () => {

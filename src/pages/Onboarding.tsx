@@ -1,29 +1,51 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { auth, db } from "../lib/firebase";
-import { setDoc, doc, getDoc } from "firebase/firestore";
+import { 
+  auth, 
+  db,
+  setDoc,
+  doc,
+  getDoc,
+  signOut
+} from "../lib/firebase";
 import { toast } from "sonner";
 import { Activity, Brain, Heart, LogOut } from "lucide-react";
-import { signOut } from "firebase/auth";
 
 const Onboarding = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
 
   // Redirect to dashboard if onboarding is already completed
   useEffect(() => {
-    if (auth.currentUser) {
-      const checkOnboarding = async () => {
+    if (!auth?.currentUser) {
+      setPageLoading(false);
+      return;
+    }
+    if (!db) {
+      console.warn("Firestore not configured");
+      setPageLoading(false);
+      return;
+    }
+    const checkOnboarding = async () => {
+      try {
         const userRef = doc(db, "users", auth.currentUser!.uid);
         const docSnap = await getDoc(userRef);
         if (docSnap.exists() && docSnap.data().onboardingCompleted) {
           navigate("/dashboard");
+          return;
         }
-      };
-      checkOnboarding();
-    }
+      } catch (error: any) {
+        console.error("Onboarding check failed:", error);
+        // Don't crash — just let the user continue onboarding
+        toast.error("Could not verify profile status. You can continue setup.");
+      } finally {
+        setPageLoading(false);
+      }
+    };
+    checkOnboarding();
   }, [navigate]);
 
   const [formData, setFormData] = useState({
@@ -94,7 +116,12 @@ const Onboarding = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  return (
+  return pageLoading ? (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background space-y-4">
+      <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <p className="text-muted-foreground font-medium">Loading your profile...</p>
+    </div>
+  ) : (
     <div className="min-h-screen bg-background py-12 px-4">
       <nav className="fixed top-0 left-0 right-0 p-6 flex justify-between items-center bg-background/80 backdrop-blur-sm z-50 max-w-[1280px] mx-auto">
          <div className="flex items-center gap-2">

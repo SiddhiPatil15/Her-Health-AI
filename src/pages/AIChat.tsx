@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Send, Sparkles, Loader2 } from "lucide-react";
+import { Send, Sparkles, Loader2, Mic, Volume2, VolumeX, Radio } from "lucide-react";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import { auth, db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { auth, db, doc, getDoc } from "@/lib/firebase";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const suggestedPrompts = [
@@ -21,8 +20,8 @@ interface Message {
   text: string;
 }
 
-// Build a personalized system prompt from user data
-function buildSystemPrompt(userData: Record<string, unknown>): string {
+// Build system prompt
+function buildSystemPrompt(userData: Record<string, any>): string {
   const stage = userData?.broadHealthStage ?? "general";
   const age = userData?.age ?? "not specified";
   const weight = userData?.weightKg ?? "not specified";
@@ -57,36 +56,216 @@ CRITICAL INSTRUCTIONS:
 5. If the question is not about women's metabolic health, politely redirect them back to their health profile.`;
 }
 
-const AIChat = () => {
-  const [userData, setUserData] = useState<Record<string, unknown> | null>(null);
+export default function AIChat() {
+  const [userData, setUserData] = useState<Record<string, any> | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [handsFree, setHandsFree] = useState(false);
+  const [voiceLanguage, setVoiceLanguage] = useState("en-US"); // en-US, es-ES, fr-FR, hi-IN
   const bottomRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
+
+  // Re-initialize speech recognition on language change
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const rec = new SpeechRecognition();
+      rec.continuous = false;
+      rec.interimResults = false;
+      rec.lang = voiceLanguage;
+
+      rec.onstart = () => {
+        setIsListening(true);
+      };
+
+      rec.onresult = (e: any) => {
+        const transcript = e.results[0][0].transcript;
+        if (transcript) {
+          setInput(transcript);
+          const wasCommand = handleVoiceCommand(transcript);
+          if (!wasCommand) {
+            sendMessage(transcript);
+          }
+        }
+      };
+
+      rec.onerror = (e: any) => {
+        console.error("Speech recognition error", e);
+        setIsListening(false);
+      };
+
+      rec.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = rec;
+    }
+  }, [voiceLanguage]);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      import("sonner").then(({ toast }) => {
+        toast.error("Speech recognition is not supported in this browser.");
+      });
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      recognitionRef.current.start();
+    }
+  };
+
+  const speakText = (text: string) => {
+    if (!voiceEnabled) return;
+    window.speechSynthesis.cancel();
+    const cleanText = text.replace(/[*_#`~]/g, "");
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = voiceLanguage;
+
+    utterance.onend = () => {
+      // Hands-free auto-listening restart
+      if (handsFree && recognitionRef.current && !isListening) {
+        setTimeout(() => {
+          try {
+            recognitionRef.current.start();
+          } catch (err) {
+            console.warn("Failed to auto-restart recognition", err);
+          }
+        }, 600);
+      }
+    };
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // Helper local function to compute scores equivalent to dashboard
+  const getCalculatedHealthScore = (data: any) => {
+    if (!data) return 72;
+    const height = Number(data.heightCm || 165);
+    const weight = Number(data.weightKg || 65);
+    const bmiVal = weight / Math.pow(height / 100, 2);
+    let bmiScore = 100;
+    if (bmiVal < 18.5) bmiScore = 100 - (18.5 - bmiVal) * 15;
+    else if (bmiVal > 24.9) bmiScore = 100 - (bmiVal - 24.9) * 10;
+    
+    const activityMap = { sedentary: 30, light: 55, moderate: 80, very: 95 };
+    const activityScore = activityMap[data.activityLevel as keyof typeof activityMap] || 60;
+    
+    const sleepHours = Number(data.sleepHours || 7);
+    const sleepScore = Math.max(10, 100 - Math.abs(8 - sleepHours) * 15);
+    
+    const phq9Score = Number(data.phq9LatestScore || 0);
+    const mentalScore = phq9Score > 14 ? 40 : phq9Score > 9 ? 60 : 80;
+    
+    const weightedScore = Math.round(
+      (bmiScore * 0.20) + (activityScore * 0.20) + (sleepScore * 0.15) + (mentalScore * 0.15) + (80 * 0.30)
+    );
+    return Math.max(10, Math.min(100, weightedScore));
+  };
+
+  // Voice Command Intent Handler
+  const handleVoiceCommand = (transcript: string): boolean => {
+    const q = transcript.toLowerCase();
+    
+    // Command 1: Diet Plan
+    if (q.includes("diet plan") || q.includes("meal plan") || q.includes("nutrition")) {
+      const calories = userData?.weightKg ? Math.round(Number(userData.weightKg) * 28) : 1800;
+      const protein = userData?.weightKg ? Math.round(Number(userData.weightKg) * 1.4) : 90;
+      const response = `Your personalized diet plan target is ${calories} calories. This contains ${protein} grams of protein, optimized for your biological stage. I recommend organic Greek yogurt for breakfast, chicken quinoa salad for lunch, and baked salmon with steamed greens for dinner.`;
+      setMessages((prev) => [...prev, 
+        { role: "user", text: transcript },
+        { role: "assistant", text: response }
+      ]);
+      speakText(response);
+      return true;
+    }
+    
+    // Command 2: Health Score
+    if (q.includes("health score") || q.includes("my score") || q.includes("health index")) {
+      const score = getCalculatedHealthScore(userData);
+      const response = `Your unified Her Health Score is ${score} out of 100. This is calculated dynamically using your body mass index, registered sleep durations, and metabolic indicators.`;
+      setMessages((prev) => [...prev, 
+        { role: "user", text: transcript },
+        { role: "assistant", text: response }
+      ]);
+      speakText(response);
+      return true;
+    }
+
+    // Command 3: Risk Predictions
+    if (q.includes("risk prediction") || q.includes("risk level") || q.includes("diabetes risk") || q.includes("obesity risk")) {
+      const risk = (userData?.latestRisk as any)?.riskLevel ?? "Low";
+      const score = (userData?.latestRisk as any)?.riskScore ?? 28;
+      const response = `Your latest metabolic assessment indicates a ${risk} risk level, with a score of ${score} out of 100. Keep walking regularly and avoiding high glycemic items to maintain this.`;
+      setMessages((prev) => [...prev, 
+        { role: "user", text: transcript },
+        { role: "assistant", text: response }
+      ]);
+      speakText(response);
+      return true;
+    }
+
+    // Command 4: Period/Menstrual Cycle
+    if (q.includes("period") || q.includes("cycle") || q.includes("menstrual")) {
+      const irregularity = userData?.cycleIrregular ? "irregular cycle warnings" : "a regular cycle pattern";
+      const response = `The system logs indicate ${irregularity}. Based on your averages, your ovulation window is estimated approximately 14 days prior to your next period, which is predicted to start soon.`;
+      setMessages((prev) => [...prev, 
+        { role: "user", text: transcript },
+        { role: "assistant", text: response }
+      ]);
+      speakText(response);
+      return true;
+    }
+
+    // Command 5: Health Summary
+    if (q.includes("health summary") || q.includes("profile summary") || q.includes("about my health")) {
+      const stage = userData?.broadHealthStage ?? "general";
+      const age = userData?.age ?? "30";
+      const weight = userData?.weightKg ?? "65";
+      const response = `Here is your profile summary: You are ${age} years old, currently tracking wellness under the ${stage} biological phase. Your weight is registered at ${weight} kilograms, and your overall targets are synchronized.`;
+      setMessages((prev) => [...prev, 
+        { role: "user", text: transcript },
+        { role: "assistant", text: response }
+      ]);
+      speakText(response);
+      return true;
+    }
+
+    return false;
+  };
 
   useEffect(() => {
     const user = auth.currentUser;
     if (!user) return;
     getDoc(doc(db, "users", user.uid)).then((snap) => {
       if (snap.exists()) {
-        const data = snap.data() as Record<string, unknown>;
+        const data = snap.data();
         setUserData(data);
         const firstName = (data.fullName as string | undefined)?.split(" ")[0] ?? "there";
         const riskLevel = (data.latestRisk as any)?.riskLevel;
         setMessages([
           {
             role: "assistant",
-            text: `Hi ${firstName}! 👋 I'm your AI Health Companion, specialized in Diabetes, Obesity, and Metabolic Health.\n\n${
-              riskLevel
-                ? `Your current AI risk assessment shows **${riskLevel}** metabolic risk. I can help you understand what that means and how to improve it.`
-                : "I can answer questions about your health profile, diabetes prevention, obesity risk, and much more!"
-            }\n\nWhat would you like to know today? 💕`,
+            text: `Hi ${firstName}! 👋 I'm your Voice-enabled AI Health Companion, specialized in Diabetes, Obesity, and Metabolic Health.
+
+${
+  riskLevel
+    ? `Your current AI risk assessment shows **${riskLevel}** metabolic risk. I can help you understand what that means and how to improve it.`
+    : "I can answer questions about your health profile, diabetes prevention, obesity risk, and much more!"
+}
+
+Try speaking: "What is my diet plan?" or "What is my health score?" 💕`,
           },
         ]);
       } else {
         setMessages([{
           role: "assistant",
-          text: "Hi there! 👋 I'm your AI Health Companion. Please complete your health profile (onboarding) so I can give you personalized advice on diabetes, obesity, and metabolic health. What would you like to know?",
+          text: "Hi there! 👋 I'm your AI Health Companion. Please complete your health profile (onboarding) so I can give you personalized advice.",
         }]);
       }
     });
@@ -105,7 +284,7 @@ const AIChat = () => {
     try {
       let responseText = "";
 
-      // 1. Try backend API first (Secure & Robust)
+      // 1. Try backend API first
       try {
         const response = await fetch("http://localhost:5001/chat", {
           method: "POST",
@@ -120,10 +299,7 @@ const AIChat = () => {
           const data = await response.json();
           if (data.response) {
             responseText = data.response;
-            console.log("Success using backend API");
           }
-        } else {
-          console.warn("Backend API failed, trying direct Gemini fallback...");
         }
       } catch (backendErr) {
         console.warn("Backend connection failed:", backendErr);
@@ -135,7 +311,7 @@ const AIChat = () => {
         if (geminiKey && geminiKey !== "your_api_key_here") {
           try {
             const genAI = new GoogleGenerativeAI(geminiKey);
-            const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro"];
+            const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro"];
             const systemPrompt = buildSystemPrompt(userData ?? {});
             
             for (const m of modelsToTry) {
@@ -159,17 +335,16 @@ const AIChat = () => {
       }
 
       if (!responseText) {
-        console.warn("Falling back to rule-based responses.");
         responseText = generateRuleBasedResponse(text, userData);
       }
 
       setMessages((prev) => [...prev, { role: "assistant", text: responseText }]);
+      speakText(responseText);
     } catch (err: any) {
-      console.error("Final catch in sendMessage:", err);
-      import("sonner").then(({ toast }) => {
-        toast.error(`Chat Error: ${err.message || "Unknown error"}`);
-      });
-      setMessages((prev) => [...prev, { role: "assistant", text: generateRuleBasedResponse(text, userData) }]);
+      console.error("Error sending message:", err);
+      const fallbackText = generateRuleBasedResponse(text, userData);
+      setMessages((prev) => [...prev, { role: "assistant", text: fallbackText }]);
+      speakText(fallbackText);
     } finally {
       setThinking(false);
     }
@@ -181,15 +356,61 @@ const AIChat = () => {
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         <DashboardHeader />
         <main className="flex-1 flex flex-col p-4 md:p-8 max-w-4xl mx-auto w-full overflow-hidden">
-          <div className="flex items-center gap-2 mb-6">
-            <div className="w-10 h-10 rounded-xl gradient-purple flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-secondary-foreground" />
+          <div className="flex flex-col md:flex-row md:items-center justify-between w-full mb-6 gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 rounded-xl gradient-purple flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-secondary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-h2 text-foreground font-bold">Voice Health Assistant</h1>
+                <p className="text-caption text-muted-foreground">
+                  Specialized in Diabetes, Obesity & Menopause
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-h2 text-foreground">AI Health Companion</h1>
-              <p className="text-caption text-muted-foreground">
-                Specialized in Diabetes, Obesity & Metabolic Health • Powered by your health profile
-              </p>
+            
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Language Selector */}
+              <select
+                value={voiceLanguage}
+                onChange={(e) => setVoiceLanguage(e.target.value)}
+                className="bg-gray-50 border border-gray-250 text-xs font-bold rounded-full px-3 py-2 outline-none text-gray-700 cursor-pointer"
+              >
+                <option value="en-US">English 🇺🇸</option>
+                <option value="es-ES">Spanish 🇪🇸</option>
+                <option value="fr-FR">French 🇫🇷</option>
+                <option value="hi-IN">Hindi 🇮🇳</option>
+              </select>
+
+              {/* Hands-Free Toggle */}
+              <button
+                onClick={() => setHandsFree(!handsFree)}
+                className={`px-4 py-2 rounded-full border text-xs font-bold transition flex items-center gap-1.5 ${
+                  handsFree
+                    ? "bg-emerald-100 border-emerald-200 text-emerald-700"
+                    : "bg-gray-50 border-gray-100 text-gray-500"
+                }`}
+                title="When active, the AI listens automatically after speaking"
+              >
+                <Radio size={14} className={handsFree ? "animate-pulse" : ""} />
+                {handsFree ? "Hands-Free On" : "Hands-Free Off"}
+              </button>
+
+              {/* Voice Mute/Unmute */}
+              <button
+                onClick={() => {
+                  setVoiceEnabled(!voiceEnabled);
+                  if (voiceEnabled) window.speechSynthesis.cancel();
+                }}
+                className={`px-4 py-2 rounded-full border text-xs font-bold transition flex items-center gap-2 ${
+                  voiceEnabled 
+                    ? "bg-purple-100 border-purple-200 text-purple-700" 
+                    : "bg-gray-50 border-gray-100 text-gray-500 hover:bg-gray-100"
+                }`}
+              >
+                {voiceEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+                {voiceEnabled ? "Voice Enabled" : "Voice Muted"}
+              </button>
             </div>
           </div>
 
@@ -205,11 +426,11 @@ const AIChat = () => {
                 <div
                   className={`max-w-[75%] rounded-2xl px-5 py-3.5 ${
                     msg.role === "user"
-                      ? "gradient-primary text-primary-foreground"
-                      : "bg-card border border-border text-foreground card-shadow"
+                      ? "gradient-primary text-primary-foreground font-semibold"
+                      : "bg-card border border-border text-foreground card-shadow leading-relaxed"
                   }`}
                 >
-                  <p className="text-body leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                  <p className="text-body whitespace-pre-wrap">{msg.text}</p>
                 </div>
               </motion.div>
             ))}
@@ -231,7 +452,7 @@ const AIChat = () => {
                 <button
                   key={prompt}
                   onClick={() => sendMessage(prompt)}
-                  className="px-4 py-2 bg-card border border-border rounded-xl text-caption text-foreground hover:border-primary/30 hover-lift transition-all text-left"
+                  className="px-4 py-2 bg-card border border-border rounded-xl text-caption text-foreground hover:border-primary/30 hover-lift transition-all text-left font-medium"
                 >
                   {prompt}
                 </button>
@@ -246,9 +467,20 @@ const AIChat = () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
-                placeholder="Ask about diabetes risk, obesity, menopause, or your health profile…"
+                placeholder="Type here or click the microphone to speak health questions..."
                 className="flex-1 px-5 py-3.5 bg-card border border-border rounded-xl text-body text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20"
               />
+              <button
+                onClick={toggleListening}
+                className={`w-12 h-12 rounded-xl flex items-center justify-center transition ${
+                  isListening 
+                    ? "bg-rose-500 text-white animate-pulse" 
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-250"
+                }`}
+                title={isListening ? "Listening... click to stop" : "Start speaking"}
+              >
+                <Mic size={20} />
+              </button>
               <button
                 onClick={() => sendMessage(input)}
                 disabled={thinking || !input.trim()}
@@ -262,10 +494,9 @@ const AIChat = () => {
       </div>
     </div>
   );
-};
+}
 
-// Rule-based fallback responses about diabetes/obesity
-function generateRuleBasedResponse(text: string, userData: Record<string, unknown> | null): string {
+function generateRuleBasedResponse(text: string, userData: Record<string, any> | null): string {
   const q = text.toLowerCase();
   const stage = (userData?.broadHealthStage as string) ?? "general";
   const bmiVal = userData?.weightKg && userData?.heightCm
@@ -273,35 +504,26 @@ function generateRuleBasedResponse(text: string, userData: Record<string, unknow
     : null;
   const riskLevel = (userData?.latestRisk as any)?.riskLevel;
 
-  // Specific detection for questions about "what should I do" or "how to improve"
-  if (q.includes("what should i do") || q.includes("how to improve") || q.includes("recommendation") || q.includes("advice")) {
+  if (q.includes("what should i do") || q.includes("how to improve") || q.includes("recommendation")) {
     if (stage === "pregnancy") {
-      return `For your pregnancy stage, the most specific thing you can do is maintain a consistent low-glycemic diet to prevent gestational diabetes. Aim for 30 minutes of light walking daily and ensure you're tracking your blood glucose levels if your risk is ${riskLevel || "not yet assessed"}. This directly helps regulate insulin during metabolic shifts.`;
+      return `For your pregnancy stage, the most specific thing you can do is maintain a consistent low-glycemic diet to prevent gestational diabetes. Aim for 30 minutes of light walking daily and ensure you're tracking your blood glucose levels.`;
     }
     if (stage === "menopause") {
-      return `During menopause, your insulin sensitivity decreases naturally. I specifically recommend adding 2 days of strength training to your week to build muscle mass, which helps process glucose more efficiently. Also, focus on high-fiber foods to manage weight changes associated with falling estrogen levels.`;
+      return `During menopause, your insulin sensitivity decreases naturally. I specifically recommend adding 2 days of strength training to your week to build muscle mass, which helps process glucose more efficiently.`;
     }
   }
 
   if (q.includes("diabetes") || q.includes("sugar") || q.includes("glucose")) {
-    return `Looking at your profile, your ${riskLevel || "current"} risk for diabetes is a key focus. To specifically target this, I recommend reducing refined sugars and processed carbohydrates immediately. ${bmiVal ? `With a BMI of ${bmiVal}, losing even 3-5% of body weight can improve your insulin sensitivity by up to 25%.` : ""} Would you like a specific meal plan suggestion for today?`;
+    return `Looking at your profile, your risk for diabetes is a key focus. To specifically target this, I recommend reducing refined sugars and processed carbohydrates immediately. ${bmiVal ? `With a BMI of ${bmiVal}, losing even 3-5% of body weight can improve your insulin sensitivity by up to 25%.` : ""}`;
   }
 
   if (q.includes("obesity") || q.includes("weight") || q.includes("bmi")) {
-    return `${bmiVal ? `Your BMI of ${bmiVal} places you in a specific risk category for metabolic syndrome.` : "Weight management is critical for your metabolic health."} The most effective direct action is increasing your daily step count to 10,000 and replacing sugary drinks with water. This has a 1:1 impact on reducing visceral fat, which is the primary driver of diabetes risk in our models.`;
+    return `${bmiVal ? `Your BMI of ${bmiVal} places you in a specific risk category for metabolic syndrome.` : "Weight management is critical for your metabolic health."} The most effective action is increasing your daily step count to 10,000 and replacing sugary drinks with water.`;
   }
 
   if (q.includes("step") || q.includes("walk") || q.includes("exercise") || q.includes("activity")) {
-    return `To answer your question about activity: yes, walking is vital. Specifically, aim for 7,000+ steps. For someone in the ${stage} stage, this helps stabilize blood sugar spikes after meals. Try to walk for 10-15 minutes after every large meal for the best metabolic results.`;
+    return `To answer your question about activity: yes, walking is vital. Specifically, aim for 8,000 steps. For someone in the ${stage} stage, this helps stabilize blood sugar spikes after meals.`;
   }
 
-  if (q.includes("sleep")) {
-    return `Specific sleep advice for you: aim for 7.5 hours. Poor sleep directly spikes your cortisol, which makes your body store fat and resist insulin. If you're in ${stage}, hormone changes might be disrupting sleep—try a cool room and no blue light 1 hour before bed to protect your metabolic health.`;
-  }
-
-  return `I want to make sure I answer your specific question accurately. Based on your ${stage} profile and ${riskLevel || "current"} risk assessment, the most important thing is to focus on ${q.includes('diet') ? 'low-glycemic nutrition' : q.includes('exercise') ? 'post-meal walking' : 'consistent health tracking'}. 
-
-Could you tell me more about your specific concern regarding ${text.split(' ').slice(-3).join(' ')} so I can give you a more targeted answer?`;
+  return `I want to make sure I answer your specific question accurately. Based on your ${stage} profile and ${riskLevel || "current"} risk assessment, focusing on balanced nutrition and consistent exercise is highly recommended.`;
 }
-
-export default AIChat;

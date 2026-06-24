@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { auth } from "../lib/firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth, signInWithEmailAndPassword } from "../lib/firebase";
 import { toast } from "sonner";
 import { Heart } from "lucide-react";
 
