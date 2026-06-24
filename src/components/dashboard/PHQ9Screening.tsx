@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Brain, Heart, ArrowRight, CheckCircle2, RotateCcw, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { auth, db, collection, addDoc } from "@/lib/firebase";
+import { API_BASE } from "@/lib/api";
 
 const questions = [
   "Little interest or pleasure in doing things",
@@ -49,10 +50,7 @@ export default function PHQ9Screening({ userData }: { userData: any }) {
     const score = answers.reduce((a, b) => a + b, 0);
 
     try {
-      let mlApiUrl = import.meta.env.VITE_ML_API_URL ?? "http://localhost:5001";
-      if (mlApiUrl.endsWith('/')) {
-        mlApiUrl = mlApiUrl.slice(0, -1);
-      }
+      let mlApiUrl = API_BASE;
       const response = await fetch(`${mlApiUrl}/phq9-evaluate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -3,6 +3,7 @@ import { auth } from "@/lib/firebase";
 import { getCycleLogs, saveCycleLog, CycleLog } from "@/lib/healthService";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { API_BASE } from "@/lib/api";
 import { 
   Calendar as CalendarIcon, 
   Plus, 
@@ -92,7 +93,7 @@ export default function CycleTrackerView({ setActiveTab }: { setActiveTab: (tab:
 1. My metabolic health, hormonal balance, and insulin levels based on my symptoms and regularity.
 2. Lifestyle and diet improvements (e.g. seeds, fiber, exercise type) to balance blood sugars. Keep recommendations direct and specific to my profile.`;
 
-      const response = await fetch("http://localhost:5001/chat", {
+      const response = await fetch(`${API_BASE}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

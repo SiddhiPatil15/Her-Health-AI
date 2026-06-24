@@ -5,6 +5,7 @@ import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { auth, db, doc, getDoc } from "@/lib/firebase";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { API_BASE } from "@/lib/api";
 
 const suggestedPrompts = [
   "What is my diabetes risk based on my profile?",
@@ -286,7 +287,7 @@ Try speaking: "What is my diet plan?" or "What is my health score?" 💕`,
 
       // 1. Try backend API first
       try {
-        const response = await fetch("http://localhost:5001/chat", {
+        const response = await fetch(`${API_BASE}/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

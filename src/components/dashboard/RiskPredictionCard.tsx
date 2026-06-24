@@ -11,6 +11,7 @@ import { motion } from "framer-motion";
 import { AlertTriangle, Brain, CheckCircle, Loader2, RefreshCw, TrendingUp, AlertCircle } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import type { PredictionInput, PredictionResult } from "@/lib/api";
+import { API_BASE } from "@/lib/api";
 import { saveRiskRecord } from "@/lib/healthService";
 
 // ─── Config per risk level ────────────────────────────────────────────────────
@@ -115,10 +116,6 @@ export default function RiskPredictionCard({ userData }: Props) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12_000);
     try {
-      let API_BASE = (import.meta.env.VITE_ML_API_URL as string | undefined) ?? "http://localhost:5001";
-      if (API_BASE.endsWith('/')) {
-        API_BASE = API_BASE.slice(0, -1);
-      }
       const res = await fetch(`${API_BASE}/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

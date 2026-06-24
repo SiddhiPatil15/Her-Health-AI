@@ -3,6 +3,7 @@ import { auth } from "@/lib/firebase";
 import { saveFoodLog, getFoodLogs, FoodLog } from "@/lib/healthService";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { API_BASE } from "@/lib/api";
 import { 
   Camera, 
   Upload, 
@@ -69,7 +70,7 @@ export default function FoodScannerView({ setActiveTab }: { setActiveTab: (tab: 
     if (!image) return;
     setScanning(true);
     try {
-      const response = await fetch("http://localhost:5001/api/scan-food", {
+      const response = await fetch(`${API_BASE}/api/scan-food`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image })

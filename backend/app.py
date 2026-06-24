@@ -120,7 +120,7 @@ def health():
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    data = request.json
+    data = request.json or {}
     try:
         age = float(data.get('age', 30))
         height = float(data.get('heightCm', 160))
@@ -207,7 +207,7 @@ def predict():
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    data = request.json
+    data = request.json or {}
     try:
         message = data.get('message', '')
         user_data = data.get('userData', {})
@@ -253,7 +253,7 @@ def chat():
 
 @app.route('/phq9-evaluate', methods=['POST'])
 def phq9_evaluate():
-    data = request.json
+    data = request.json or {}
     try:
         score = int(data.get('score', 0))
         stage = data.get('stage', 'postpartum')
@@ -306,7 +306,7 @@ def phq9_evaluate():
 
 @app.route('/api/diet-plan', methods=['POST'])
 def diet_plan():
-    data = request.json
+    data = request.json or {}
     try:
         age = float(data.get('age', 30))
         height = float(data.get('heightCm', 160))
@@ -460,7 +460,7 @@ def diet_plan():
 
 @app.route('/api/scan-food', methods=['POST'])
 def scan_food():
-    data = request.json
+    data = request.json or {}
     try:
         image_base64 = data.get('image') # Base64 string
         if not image_base64:
@@ -540,7 +540,7 @@ def scan_food():
 
 @app.route('/api/risk-forecast', methods=['POST'])
 def risk_forecast():
-    data = request.json
+    data = request.json or {}
     try:
         # User details
         age = float(data.get('age', 30))

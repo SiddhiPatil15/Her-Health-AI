@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { API_BASE } from "@/lib/api";
 import { 
   TrendingDown, 
   Dumbbell, 
@@ -41,7 +42,7 @@ export default function RiskSimulatorView({ userData, setActiveTab }: { userData
     if (!userData) return;
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:5001/api/risk-forecast", {
+      const response = await fetch(`${API_BASE}/api/risk-forecast`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
